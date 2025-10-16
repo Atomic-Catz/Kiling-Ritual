@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3f6ede7261d48a94ca1a28a60327e855
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Models/Materials/RightArm-Material.mat
+  uploadId: 707835

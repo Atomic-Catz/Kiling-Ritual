@@ -15,6 +15,8 @@ public class Projectile : MonoBehaviour {
 	public float minDestroyTime;
 	[Tooltip("Maximum time after impact that the bullet is destroyed")]
 	public float maxDestroyTime;
+	[Tooltip("Damage")] 
+	public int damage = 25;
 
 	[Header("Impact Effect Prefabs")]
 	public Transform [] bloodImpactPrefabs;
@@ -39,6 +41,26 @@ public class Projectile : MonoBehaviour {
 		//Ignore collisions with other projectiles.
 		if (collision.gameObject.GetComponent<Projectile>() != null)
 			return;
+
+		EnemyAI enemy = collision.gameObject.GetComponent<EnemyAI>();
+		if (enemy != null)
+		{
+			enemy.TakeDamage(damage);
+			
+			// Spawn a blood impact if available.
+			if (bloodImpactPrefabs.Length > 0)
+			{
+				Instantiate(
+					bloodImpactPrefabs[Random.Range(0, bloodImpactPrefabs.Length)],
+					transform.position,
+					Quaternion.LookRotation(collision.contacts[0].normal)
+				);
+			}
+
+			Destroy(gameObject);
+			return;
+		}
+		
 		
 		// //Ignore collision if bullet collides with "Player" tag
 		// if (collision.gameObject.CompareTag("Player")) 

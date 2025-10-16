@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 138a89174142dfd4ba22f612d8e52899
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Models/Materials/Head_A-Material.mat
+  uploadId: 707835

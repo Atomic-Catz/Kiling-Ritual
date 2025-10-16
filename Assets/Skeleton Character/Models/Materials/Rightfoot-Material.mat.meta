@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e9d5df40a671ccc4abcf968689f78992
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Models/Materials/Rightfoot-Material.mat
+  uploadId: 707835

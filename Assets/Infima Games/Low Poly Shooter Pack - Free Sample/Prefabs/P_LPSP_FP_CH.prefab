@@ -1331,12 +1331,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InfimaGames.LowPolyShooterPack.CharacterHealth
   maxHealth: 100
-  onHealthChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  onDeath:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1 &2906013363015915789
 GameObject:
   m_ObjectHideFlags: 0

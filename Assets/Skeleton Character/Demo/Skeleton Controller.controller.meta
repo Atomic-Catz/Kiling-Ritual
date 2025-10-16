@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: cfa62b8bc2afd9d4dad03fe058c56cc4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Demo/Skeleton Controller.controller
+  uploadId: 707835

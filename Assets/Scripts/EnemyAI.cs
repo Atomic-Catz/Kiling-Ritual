@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.InputSystem.LowLevel;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyAI : MonoBehaviour
@@ -29,7 +30,7 @@ public class EnemyAI : MonoBehaviour
     {
         if (player == null)
         {
-            var found = GameObject.Find("PlayerObj");
+            var found = GameObject.FindWithTag("Player");
             if (found != null) player = found.transform;
         }
 
@@ -124,7 +125,8 @@ public class EnemyAI : MonoBehaviour
     private void ResetAttack()
     {
         alreadyAttacked = false;
-        if (agent != null) agent.isStopped = false;
+        if (agent != null && agent.enabled) 
+            agent.isStopped = false;
     }
 
     public void TakeDamage(int damage)
@@ -132,14 +134,32 @@ public class EnemyAI : MonoBehaviour
         health -= damage;
 
         if (health <= 0f)
-            Invoke(nameof(DestroyEnemy), 5f);
+            Invoke(nameof(DestroyEnemy), 0f);
     }
 
     private void DestroyEnemy()
     {
-        Destroy(gameObject);
-    }
+        if (agent != null)
+            agent.enabled = false;
 
+        this.enabled = false;
+
+        Collider rootCollider = GetComponent<Collider>();
+        if (rootCollider != null)
+            rootCollider.enabled = false;
+        
+        var ragdoll = GetComponent<RagdollController>();
+        if (ragdoll != null)
+            ragdoll.SetRagdoll(true);
+
+        gameObject.layer = LayerMask.NameToLayer("DeadEnemy");
+
+        foreach (Transform child in transform)
+            child.gameObject.layer = LayerMask.NameToLayer("DeadEnemy");
+        
+        Destroy(gameObject, 5f);
+    }
+    
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

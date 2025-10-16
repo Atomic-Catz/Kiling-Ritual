@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a198ba524b6deda418d7d9dc94e96f0d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Models/Materials/Belly-Material.mat
+  uploadId: 707835

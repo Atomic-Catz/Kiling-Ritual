@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bafc54d557ad8184abff18ed9c5e23c3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Models/Materials/ChestA-Material.mat
+  uploadId: 707835
