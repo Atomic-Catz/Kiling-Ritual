@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 19f11ba98d35371419a453168979d1a5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Models/Materials/LeftLeg-Material.mat
+  uploadId: 707835

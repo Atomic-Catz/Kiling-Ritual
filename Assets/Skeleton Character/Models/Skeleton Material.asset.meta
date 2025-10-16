@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: bd85a91921dacc1409b4f66e964766f9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Models/Skeleton Material.asset
+  uploadId: 707835

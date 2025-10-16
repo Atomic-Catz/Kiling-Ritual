@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 4ffed2ccc3821c04f8075f405c628cca
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Demo/Skeleton_Rotate.cs
+  uploadId: 707835

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 546170759033fe049b1d87d9c0a8aab1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 221153
+  packageName: 3D Voxel Model - Skeleton Character
+  packageVersion: 1.1
+  assetPath: Assets/Skeleton Character/Models/Materials/Hip-Material.mat
+  uploadId: 707835
