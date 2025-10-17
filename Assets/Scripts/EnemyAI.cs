@@ -1,44 +1,61 @@
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.InputSystem.LowLevel;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyAI : MonoBehaviour
 {
+    [Header("References")]
     public NavMeshAgent agent;
     public Transform player;
     public Transform attackPoint;
+    public Animator animator;
 
-    public LayerMask isGround;
-    public LayerMask isPlayer;
-
+    [Header("Stats")]
     public float health = 100f;
-    public float timeBetweenAttacks = 1.5f;
-    private bool alreadyAttacked;
     public int meleeDamage = 10;
 
-    public Vector3 walkPoint;
-    private bool walkPointSet;
-    public float walkPointRange = 10f;
-
-    public float sightRange = 15f;
+    [Header("Attack Settings")]
     public float attackRange = 2f;
-    public bool playerInSight;
-    public bool playerInAttack;
+    public float sightRange = 15f;
+    public float attackCooldown = 1.5f;
+
+    [Header("Patrol Settings")]
+    public float walkPointRange = 10f;
+    private Vector3 walkPoint;
+    private bool walkPointSet;
+
+    [Header("Layers")]
+    public LayerMask isPlayer;
+
+    private bool playerInSight;
+    private bool playerInAttack;
+    private float lastAttackTime = -999f;
 
     private void Awake()
     {
         if (player == null)
         {
-            var found = GameObject.FindWithTag("Player");
+            GameObject found = GameObject.FindWithTag("Player");
             if (found != null) player = found.transform;
         }
 
         if (agent == null) agent = GetComponent<NavMeshAgent>();
+        if (animator == null) animator = GetComponent<Animator>();
+    }
+
+    private void Start()
+    {
+        if (agent == null || !agent.isOnNavMesh)
+        {
+            enabled = false;
+            Debug.LogWarning($"{name} AI disabled: NavMeshAgent not on NavMesh!");
+        }
     }
 
     private void Update()
     {
+        if (agent == null || !agent.isOnNavMesh) return;
+
         playerInSight = Physics.CheckSphere(transform.position, sightRange, isPlayer);
         playerInAttack = Physics.CheckSphere(transform.position, attackRange, isPlayer);
 
@@ -56,8 +73,11 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    #region Patrol
     private void Patroling()
     {
+        if (agent == null || !agent.isOnNavMesh) return;
+
         if (!walkPointSet) SearchWalkPoint();
 
         if (walkPointSet)
@@ -65,7 +85,10 @@ public class EnemyAI : MonoBehaviour
 
         Vector3 distanceToWalkPoint = transform.position - walkPoint;
 
-        if (distanceToWalkPoint.magnitude < 1f)
+        if (animator != null)
+            animator.SetBool("IsWalking", walkPointSet);
+
+        if (distanceToWalkPoint.sqrMagnitude < 1f)
             walkPointSet = false;
     }
 
@@ -75,8 +98,7 @@ public class EnemyAI : MonoBehaviour
         float randomX = Random.Range(-walkPointRange, walkPointRange);
         Vector3 randomPoint = transform.position + new Vector3(randomX, 0f, randomZ);
 
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(randomPoint, out hit, walkPointRange, NavMesh.AllAreas))
+        if (NavMesh.SamplePosition(randomPoint, out NavMeshHit hit, walkPointRange, NavMesh.AllAreas))
         {
             walkPoint = hit.position;
             walkPointSet = true;
@@ -86,80 +108,88 @@ public class EnemyAI : MonoBehaviour
             walkPointSet = false;
         }
     }
+    #endregion
 
+    #region Chase
     private void ChasePlayer()
     {
-        if (agent.isStopped) agent.isStopped = false;
-        if (player != null)
-            agent.SetDestination(player.position);
-    }
+        if (agent == null || !agent.isOnNavMesh || player == null) return;
 
+        agent.isStopped = false;
+        agent.SetDestination(player.position);
+
+        if (animator != null)
+            animator.SetBool("IsWalking", true);
+    }
+    #endregion
+
+    #region Attack
     private void AttackPlayer()
     {
-        agent.ResetPath();
-        agent.isStopped = true;
+        if (agent == null || !agent.isOnNavMesh || player == null) return;
 
-        if (player == null) return;
-
+        // Face the player
         Vector3 lookPos = new Vector3(player.position.x, transform.position.y, player.position.z);
         transform.LookAt(lookPos);
 
-        if (!alreadyAttacked)
-        {
-            Transform origin = (attackPoint != null) ? attackPoint : transform;
-            Collider[] hits = Physics.OverlapSphere(origin.position, attackRange, isPlayer);
-            foreach (var hit in hits)
-            {
-                if (hit.transform == player)
-                {
-                    player.SendMessage("TakeDamage", meleeDamage, SendMessageOptions.DontRequireReceiver);
-                    break;
-                }
-            }
+        // Stop moving while attacking
+        agent.ResetPath();
+        agent.isStopped = true;
 
-            alreadyAttacked = true;
-            Invoke(nameof(ResetAttack), timeBetweenAttacks);
+        // Check cooldown
+        if (Time.time - lastAttackTime < attackCooldown) return;
+        lastAttackTime = Time.time;
+
+        // Play attack animation
+        if (animator != null)
+        {
+            animator.SetBool("IsWalking", false);
+            animator.ResetTrigger("IsAttacking");
+            animator.SetTrigger("IsAttacking");
+        }
+
+        // Deal damage
+        Transform origin = (attackPoint != null) ? attackPoint : transform;
+        Collider[] hits = Physics.OverlapSphere(origin.position, attackRange, isPlayer);
+        foreach (var hit in hits)
+        {
+            if (hit.transform == player)
+            {
+                player.SendMessage("TakeDamage", meleeDamage, SendMessageOptions.DontRequireReceiver);
+                break;
+            }
         }
     }
+    #endregion
 
-    private void ResetAttack()
-    {
-        alreadyAttacked = false;
-        if (agent != null && agent.enabled) 
-            agent.isStopped = false;
-    }
-
+    #region Damage & Death
     public void TakeDamage(int damage)
     {
         health -= damage;
-
         if (health <= 0f)
-            Invoke(nameof(DestroyEnemy), 0f);
+            DestroyEnemy();
     }
 
     private void DestroyEnemy()
     {
-        if (agent != null)
-            agent.enabled = false;
-
-        this.enabled = false;
+        if (agent != null) agent.enabled = false;
+        if (animator != null) animator.enabled = false;
 
         Collider rootCollider = GetComponent<Collider>();
-        if (rootCollider != null)
-            rootCollider.enabled = false;
-        
+        if (rootCollider != null) rootCollider.enabled = false;
+
         var ragdoll = GetComponent<RagdollController>();
-        if (ragdoll != null)
-            ragdoll.SetRagdoll(true);
+        if (ragdoll != null) ragdoll.SetRagdoll(true);
 
         gameObject.layer = LayerMask.NameToLayer("DeadEnemy");
-
         foreach (Transform child in transform)
             child.gameObject.layer = LayerMask.NameToLayer("DeadEnemy");
-        
+
         Destroy(gameObject, 5f);
     }
-    
+    #endregion
+
+    #region Gizmos
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
@@ -167,4 +197,5 @@ public class EnemyAI : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, sightRange);
     }
+    #endregion
 }
