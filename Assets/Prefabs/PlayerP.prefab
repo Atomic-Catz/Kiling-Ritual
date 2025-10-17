@@ -2500,8 +2500,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   audioClipWalking: {fileID: 8300000, guid: 74abbbf1b1724e34b894191db38e10a0, type: 3}
   audioClipRunning: {fileID: 8300000, guid: d2add02f58e61e640aba3ae9110591cb, type: 3}
-  speedWalking: 4
-  speedRunning: 6.8
+  speedWalking: 5
+  speedRunning: 7
 --- !u!114 &8048123243130234565
 MonoBehaviour:
   m_ObjectHideFlags: 0

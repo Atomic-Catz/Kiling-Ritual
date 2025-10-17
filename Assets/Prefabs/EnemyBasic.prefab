@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5090948483111444802}
   - component: {fileID: 2102259201975189936}
   - component: {fileID: 6091810054750146697}
+  - component: {fileID: 198966832519496526}
   m_Layer: 0
   m_Name: EnemyBasic
   m_TagString: Untagged
@@ -104,10 +105,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 2.5
+  m_Radius: 0.4
+  m_Height: 2
   m_Direction: 1
-  m_Center: {x: 0, y: 1.2, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!195 &5090948483111444802
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -145,21 +146,16 @@ MonoBehaviour:
   agent: {fileID: 5090948483111444802}
   player: {fileID: 0}
   attackPoint: {fileID: 0}
-  isGround:
-    serializedVersion: 2
-    m_Bits: 65536
+  animator: {fileID: 0}
+  health: 100
+  meleeDamage: 10
+  attackRange: 2
+  sightRange: 60
+  attackCooldown: 1.5
+  walkPointRange: 10
   isPlayer:
     serializedVersion: 2
     m_Bits: 1024
-  health: 100
-  timeBetweenAttacks: 1.5
-  meleeDamage: 10
-  walkPoint: {x: 0, y: 0, z: 0}
-  walkPointRange: 10
-  sightRange: 15
-  attackRange: 2
-  playerInSight: 0
-  playerInAttack: 0
 --- !u!114 &6091810054750146697
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -172,6 +168,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1617aeab54b916a429d39e00cfc9af23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RagdollController
+--- !u!95 &198966832519496526
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1630887308570750263}
+  m_Enabled: 1
+  m_Avatar: {fileID: 9000000, guid: dbee23da64917384e96c366ecc8d2a6b, type: 3}
+  m_Controller: {fileID: 9100000, guid: ae60c16f901576d428737c315c02ffd4, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &7665339528748320717
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -180,6 +198,51 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4734206697991682519}
     m_Modifications:
+    - target: {fileID: 180078431170158342, guid: dc9709a0a829794448e7e0f20153a368,
+        type: 3}
+      propertyPath: m_Avatar
+      value: 
+      objectReference: {fileID: 9000000, guid: dbee23da64917384e96c366ecc8d2a6b, type: 3}
+    - target: {fileID: 180078431170158342, guid: dc9709a0a829794448e7e0f20153a368,
+        type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 180078431170158342, guid: dc9709a0a829794448e7e0f20153a368,
+        type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1264147207655519659, guid: dc9709a0a829794448e7e0f20153a368,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1264147207655519659, guid: dc9709a0a829794448e7e0f20153a368,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1264147207655519659, guid: dc9709a0a829794448e7e0f20153a368,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1264147207655519659, guid: dc9709a0a829794448e7e0f20153a368,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.31499985
+      objectReference: {fileID: 0}
+    - target: {fileID: 1264147207655519659, guid: dc9709a0a829794448e7e0f20153a368,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -7.494347e-25
+      objectReference: {fileID: 0}
+    - target: {fileID: 1264147207655519659, guid: dc9709a0a829794448e7e0f20153a368,
+        type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1964376257645081928, guid: dc9709a0a829794448e7e0f20153a368,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -188,7 +251,7 @@ PrefabInstance:
     - target: {fileID: 1964376257645081928, guid: dc9709a0a829794448e7e0f20153a368,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.0400002
+      value: 0.02000022
       objectReference: {fileID: 0}
     - target: {fileID: 1964376257645081928, guid: dc9709a0a829794448e7e0f20153a368,
         type: 3}
