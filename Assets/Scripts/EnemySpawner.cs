@@ -5,10 +5,11 @@ using UnityEngine.AI;
 
 public class EnemySpawner : MonoBehaviour
 {
-    [Header("Spawn Settings")] public GameObject enemyPrefab; // The enemy prefab to spawn
-    public float spawnRadius = 5f; // The radius around the spawner to spawn enemies
-    public int maxEnemies = 10; // Maximum number of active enemies
-    public float spawnInterval = 5f; // Time between spawns
+    [Header("Spawn Settings")]
+    public GameObject[] enemyPrefabs; // Multiple enemy prefabs
+    public float spawnRadius = 5f;    // The radius around the spawner to spawn enemies
+    public int maxEnemies = 10;       // Maximum number of active enemies
+    public float spawnInterval = 5f;  // Time between spawns
 
     private List<GameObject> activeEnemies = new List<GameObject>();
     private bool isSpawning = true;
@@ -30,7 +31,10 @@ public class EnemySpawner : MonoBehaviour
 
                 if (spawnPosition != Vector3.zero)
                 {
-                    GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+                    // Pick a random prefab from the list
+                    GameObject prefabToSpawn = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
+
+                    GameObject enemy = Instantiate(prefabToSpawn, spawnPosition, Quaternion.identity);
                     activeEnemies.Add(enemy);
 
                     // Register to remove the enemy when it is destroyed
@@ -62,13 +66,12 @@ public class EnemySpawner : MonoBehaviour
 
     public class SpawnerEnemy : MonoBehaviour
     {
-        public delegate void EnemyDestroyed(); // Declare delegate type
-
-        public event EnemyDestroyed OnEnemyDestroyed; // Declare event
+        public delegate void EnemyDestroyed();
+        public event EnemyDestroyed OnEnemyDestroyed;
 
         void OnDestroy()
         {
-            OnEnemyDestroyed?.Invoke(); // Invoke the event when the enemy is destroyed
+            OnEnemyDestroyed?.Invoke();
         }
     }
 }
