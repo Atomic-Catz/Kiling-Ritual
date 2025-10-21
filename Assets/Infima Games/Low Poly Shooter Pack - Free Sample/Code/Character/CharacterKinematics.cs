@@ -3,10 +3,6 @@ using System.Collections.Generic;
 
 namespace InfimaGames.LowPolyShooterPack
 {
-    /// <summary>
-    /// Handles all the Inverse Kinematics needed for our Character.
-    /// Very important. Uses Unity's IK code.
-    /// </summary>
     public class CharacterKinematics : MonoBehaviour
     {
         #region FIELDS SERIALIZED
@@ -66,51 +62,25 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region FIELDS
 
-        /// <summary>
-        /// Maintain Target Position Offset.
-        /// </summary>
         private bool maintainTargetPositionOffset;
-        /// <summary>
-        /// Maintain Target Rotation Offset.
-        /// </summary>
         private bool maintainTargetRotationOffset;
 
         #endregion
         
         #region CONSTANTS
 
-        /// <summary>
-        /// Constant.
-        /// </summary>
         private const float KSqrEpsilon = 1e-8f;
 
         #endregion
         
         #region METHODS
         
-        /// <summary>
-        /// Computes the Inverse Kinematics for both arms.
-        /// </summary>
         public void Compute(float weightLeft = 1.0f, float weightRight = 1.0f)
         {
-            //Compute Left Arm.
-            ComputeOnce(armLeftHierarchy, armLeftTarget, 
-                armLeftWeightPosition * weightLeft, 
-                armLeftWeightRotation * weightLeft);
-            
-            //Compute Right Arm.
-            ComputeOnce(armRightHierarchy, armRightTarget, 
-                armRightWeightPosition * weightRight, 
-                armRightWeightRotation * weightRight);
+            ComputeOnce(armLeftHierarchy, armLeftTarget, armLeftWeightPosition * weightLeft, armLeftWeightRotation * weightLeft);
+            ComputeOnce(armRightHierarchy, armRightTarget, armRightWeightPosition * weightRight, armRightWeightRotation * weightRight);
         }
 
-        /// <summary>
-        /// Computes the Inverse Kinematics for one arm, or hierarchy.
-        /// </summary>
-        /// <param name="hierarchy">Arm Hierarchy. Root, Mid, Tip.</param>
-        /// <param name="target">IK Target.</param>
-        /// <param name="weightPosition">Position Weight.</param>
-        /// <param name="weightRotation">Rotation Weight.</param>
         private void ComputeOnce(IReadOnlyList<Transform> hierarchy, Transform target, float weightPosition = 1.0f, float weightRotation = 1.0f)
         {
             Vector3 targetOffsetPosition = Vector3.zero;
@@ -143,18 +113,12 @@ namespace InfimaGames.LowPolyShooterPack
             float oldAbcAngle = TriangleAngle(acLen, abLen, bcLen);
             float newAbcAngle = TriangleAngle(atLen, abLen, bcLen);
 
-            // Bend normal strategy is to take whatever has been provided in the animation
-            // stream to minimize configuration changes, however if this is collinear
-            // try computing a bend normal given the desired target position.
-            // If this also fails, try resolving axis using hint if provided.
             Vector3 axis = Vector3.Cross(ab, bc);
             if (axis.sqrMagnitude < KSqrEpsilon)
             {
                 axis = hasHint ? Vector3.Cross(hint.position - aPosition, bc) : Vector3.zero;
-
                 if (axis.sqrMagnitude < KSqrEpsilon)
                     axis = Vector3.Cross(at, bc);
-
                 if (axis.sqrMagnitude < KSqrEpsilon)
                     axis = Vector3.up;
             }

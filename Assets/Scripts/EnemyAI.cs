@@ -19,6 +19,10 @@ public class EnemyAI : MonoBehaviour
     public float sightRange = 15f;
     public float attackCooldown = 1.5f;
 
+    [Header("Movement Settings")]
+    public float walkSpeed = 2f;   // Speed when patrolling
+    public float chaseSpeed = 4f;  // Speed when chasing
+
     [Header("Patrol Settings")]
     public float walkPointRange = 10f;
     private Vector3 walkPoint;
@@ -78,6 +82,9 @@ public class EnemyAI : MonoBehaviour
     {
         if (agent == null || !agent.isOnNavMesh) return;
 
+        // Set patrol speed
+        agent.speed = walkSpeed;
+
         if (!walkPointSet) SearchWalkPoint();
 
         if (walkPointSet)
@@ -115,6 +122,9 @@ public class EnemyAI : MonoBehaviour
     {
         if (agent == null || !agent.isOnNavMesh || player == null) return;
 
+        // Set chase speed
+        agent.speed = chaseSpeed;
+
         agent.isStopped = false;
         agent.SetDestination(player.position);
 
@@ -128,13 +138,13 @@ public class EnemyAI : MonoBehaviour
     {
         if (agent == null || !agent.isOnNavMesh || player == null) return;
 
-        // Face the player
-        Vector3 lookPos = new Vector3(player.position.x, transform.position.y, player.position.z);
-        transform.LookAt(lookPos);
-
         // Stop moving while attacking
         agent.ResetPath();
         agent.isStopped = true;
+
+        // Face the player
+        Vector3 lookPos = new Vector3(player.position.x, transform.position.y, player.position.z);
+        transform.LookAt(lookPos);
 
         // Check cooldown
         if (Time.time - lastAttackTime < attackCooldown) return;
