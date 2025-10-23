@@ -14,16 +14,71 @@ public class EnemySpawner : MonoBehaviour
     private List<GameObject> activeEnemies = new List<GameObject>();
     private bool isSpawning = true;
 
+    public float waveDuration = 120f;
+    public float breakDuration = 90f;
+
+    private bool waveInProgress = false;
+    private bool spawningAllowed = false;
+    private int enemiesSpawnedThisWave = 0;
+    private int waveNumber = 0;
+
     void Start()
     {
         StartCoroutine(SpawnEnemies());
+        StartCoroutine(WaveRoutine());
+    }
+
+    IEnumerator WaveRoutine()
+    {
+        while (isSpawning)
+        {
+            waveNumber++;
+            enemiesSpawnedThisWave = 0;
+            waveInProgress = true;
+            spawningAllowed = true;
+            float elapsed = 0f;
+
+            while (elapsed < waveDuration)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            spawningAllowed = false;
+
+            if (enemiesSpawnedThisWave > 0)
+            {
+                while (activeEnemies.Count > 0)
+                {
+                    yield return null;
+                }
+            }
+
+            waveInProgress = false;
+
+            float breakElapsed = 0f;
+            while (breakElapsed < breakDuration && isSpawning)
+            {
+                breakElapsed += Time.deltaTime;
+                yield return null;
+            }
+        }
     }
 
     IEnumerator SpawnEnemies()
     {
         while (isSpawning)
         {
+            if (!spawningAllowed)
+            {
+                yield return null;
+                continue;
+            }
+            
             yield return new WaitForSeconds(spawnInterval);
+
+            if (!spawningAllowed)
+                continue;
 
             if (activeEnemies.Count < maxEnemies)
             {
@@ -36,6 +91,7 @@ public class EnemySpawner : MonoBehaviour
 
                     GameObject enemy = Instantiate(prefabToSpawn, spawnPosition, Quaternion.identity);
                     activeEnemies.Add(enemy);
+                    enemiesSpawnedThisWave++;
 
                     // Register to remove the enemy when it is destroyed
                     SpawnerEnemy spawnerEnemy = enemy.GetComponent<SpawnerEnemy>();
