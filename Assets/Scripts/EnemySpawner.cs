@@ -6,128 +6,65 @@ using UnityEngine.AI;
 public class EnemySpawner : MonoBehaviour
 {
     [Header("Spawn Settings")]
-    public GameObject[] enemyPrefabs; // Multiple enemy prefabs
-    public float spawnRadius = 5f;    // The radius around the spawner to spawn enemies
-    public int maxEnemies = 10;       // Maximum number of active enemies
-    public float spawnInterval = 5f;  // Time between spawns
+    public GameObject[] enemyPrefabs;
+    public float spawnRadius = 5f;
+    public int enemiesPerWave = 10;
+    public float spawnDelay = 0.5f;
 
     private List<GameObject> activeEnemies = new List<GameObject>();
-    private bool isSpawning = true;
 
-    public float waveDuration = 120f;
-    public float breakDuration = 90f;
+    public bool HasActiveEnemies => activeEnemies.Count > 0;
 
-    private bool waveInProgress = false;
-    private bool spawningAllowed = false;
-    private int enemiesSpawnedThisWave = 0;
-    private int waveNumber = 0;
-
-    void Start()
+    public void StartWave()
     {
-        StartCoroutine(SpawnEnemies());
-        StartCoroutine(WaveRoutine());
+        StartCoroutine(SpawnWave());
     }
 
-    IEnumerator WaveRoutine()
+    private IEnumerator SpawnWave()
     {
-        while (isSpawning)
+        for (int i = 0; i < enemiesPerWave; i++)
         {
-            waveNumber++;
-            enemiesSpawnedThisWave = 0;
-            waveInProgress = true;
-            spawningAllowed = true;
-            float elapsed = 0f;
-
-            while (elapsed < waveDuration)
+            Vector3 spawnPos = GetRandomNavMeshPoint(transform.position, spawnRadius);
+            if (spawnPos != Vector3.zero)
             {
-                elapsed += Time.deltaTime;
-                yield return null;
-            }
+                GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
+                GameObject enemy = Instantiate(prefab, spawnPos, Quaternion.identity);
+                activeEnemies.Add(enemy);
 
-            spawningAllowed = false;
+                SpawnerEnemy spawnerEnemy = enemy.GetComponent<SpawnerEnemy>();
+                if (spawnerEnemy == null)
+                    spawnerEnemy = enemy.AddComponent<SpawnerEnemy>();
 
-            if (enemiesSpawnedThisWave > 0)
-            {
-                while (activeEnemies.Count > 0)
+                spawnerEnemy.OnEnemyDestroyed += () =>
                 {
-                    yield return null;
-                }
+                    activeEnemies.Remove(enemy);
+                };
             }
 
-            waveInProgress = false;
-
-            float breakElapsed = 0f;
-            while (breakElapsed < breakDuration && isSpawning)
-            {
-                breakElapsed += Time.deltaTime;
-                yield return null;
-            }
+            yield return new WaitForSeconds(spawnDelay);
         }
     }
 
-    IEnumerator SpawnEnemies()
+    private Vector3 GetRandomNavMeshPoint(Vector3 center, float radius)
     {
-        while (isSpawning)
-        {
-            if (!spawningAllowed)
-            {
-                yield return null;
-                continue;
-            }
-            
-            yield return new WaitForSeconds(spawnInterval);
-
-            if (!spawningAllowed)
-                continue;
-
-            if (activeEnemies.Count < maxEnemies)
-            {
-                Vector3 spawnPosition = GetRandomNavMeshPoint(transform.position, spawnRadius);
-
-                if (spawnPosition != Vector3.zero)
-                {
-                    // Pick a random prefab from the list
-                    GameObject prefabToSpawn = enemyPrefabs[Random.Range(0, enemyPrefabs.Length)];
-
-                    GameObject enemy = Instantiate(prefabToSpawn, spawnPosition, Quaternion.identity);
-                    activeEnemies.Add(enemy);
-                    enemiesSpawnedThisWave++;
-
-                    // Register to remove the enemy when it is destroyed
-                    SpawnerEnemy spawnerEnemy = enemy.GetComponent<SpawnerEnemy>();
-                    if (spawnerEnemy != null)
-                    {
-                        spawnerEnemy.OnEnemyDestroyed += () => activeEnemies.Remove(enemy);
-                    }
-                }
-            }
-        }
-    }
-
-    Vector3 GetRandomNavMeshPoint(Vector3 center, float radius)
-    {
-        for (int i = 0; i < 10; i++) // Try 10 times to find a valid point
+        for (int i = 0; i < 10; i++)
         {
             Vector3 randomPoint = center + Random.insideUnitSphere * radius;
             NavMeshHit hit;
-
             if (NavMesh.SamplePosition(randomPoint, out hit, radius, NavMesh.AllAreas))
-            {
                 return hit.position;
-            }
         }
-
-        return Vector3.zero; // Return zero if no valid point is found
+        return Vector3.zero;
     }
+}
 
-    public class SpawnerEnemy : MonoBehaviour
+public class SpawnerEnemy : MonoBehaviour
+{
+    public delegate void EnemyDestroyed();
+    public event EnemyDestroyed OnEnemyDestroyed;
+
+    private void OnDestroy()
     {
-        public delegate void EnemyDestroyed();
-        public event EnemyDestroyed OnEnemyDestroyed;
-
-        void OnDestroy()
-        {
-            OnEnemyDestroyed?.Invoke();
-        }
+        OnEnemyDestroyed?.Invoke();
     }
 }
