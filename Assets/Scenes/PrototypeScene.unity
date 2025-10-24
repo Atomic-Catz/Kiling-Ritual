@@ -1311,8 +1311,8 @@ MonoBehaviour:
   - {fileID: 1630887308570750263, guid: 9c6c242d577571545ab9af33ab637f60, type: 3}
   - {fileID: 4196833858045352344, guid: c5fba68a24bad7942b2fa7a942831d81, type: 3}
   spawnRadius: 3
-  maxEnemies: 10
-  spawnInterval: 1
+  enemiesPerWave: 5
+  spawnDelay: 0.5
 --- !u!4 &315755662
 Transform:
   m_ObjectHideFlags: 0
@@ -2293,6 +2293,54 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.664, y: 0.332, z: 0.24899997}
   m_Center: {x: 0, y: 0.166, z: 0}
+--- !u!1 &482590862
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 482590863}
+  - component: {fileID: 482590864}
+  m_Layer: 0
+  m_Name: WaveManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &482590863
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482590862}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 21.20278, y: 0.80022, z: 40.17068}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &482590864
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482590862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8748c9d65b8421048ae7ab2f7eb19dac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaveManager
+  spawners:
+  - {fileID: 1636536686}
+  - {fileID: 315755661}
+  breakDuration: 15
 --- !u!1001 &499879872
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7052,8 +7100,8 @@ MonoBehaviour:
   - {fileID: 1630887308570750263, guid: 9c6c242d577571545ab9af33ab637f60, type: 3}
   - {fileID: 4196833858045352344, guid: c5fba68a24bad7942b2fa7a942831d81, type: 3}
   spawnRadius: 3
-  maxEnemies: 10
-  spawnInterval: 1
+  enemiesPerWave: 5
+  spawnDelay: 0.5
 --- !u!4 &1636536687
 Transform:
   m_ObjectHideFlags: 0
@@ -8782,3 +8830,4 @@ SceneRoots:
   - {fileID: 180833872}
   - {fileID: 1636536687}
   - {fileID: 315755662}
+  - {fileID: 482590863}
