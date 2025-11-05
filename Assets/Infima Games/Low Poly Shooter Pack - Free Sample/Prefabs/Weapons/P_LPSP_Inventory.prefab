@@ -543,11 +543,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: P_LPSP_WEP_Handgun_04_NEW
       objectReference: {fileID: 0}
+<<<<<<< HEAD
     - target: {fileID: 3882838340836119680, guid: a1f7c61ecbd38eb4d8ca94f9fa956023,
         type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+=======
+>>>>>>> origin/Cristi
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
