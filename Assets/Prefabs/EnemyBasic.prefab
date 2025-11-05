@@ -8175,7 +8175,7 @@ MonoBehaviour:
   health: 100
   meleeDamage: 10
   attackRange: 1
-  sightRange: 60
+  sightRange: 200
   attackCooldown: 1.5
   walkSpeed: 2
   chaseSpeed: 2.5
