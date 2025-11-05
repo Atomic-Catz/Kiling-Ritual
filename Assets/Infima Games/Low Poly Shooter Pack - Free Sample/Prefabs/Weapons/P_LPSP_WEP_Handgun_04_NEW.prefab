@@ -1619,7 +1619,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 965555d451af4a2299927c4e3dd7ee09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+<<<<<<< HEAD
+  ammunitionTotal: 15
+=======
   ammunitionTotal: 10
+>>>>>>> origin/Cristi
   sprite: {fileID: 21300000, guid: d96558cda50c04347b69780fd84c6fc9, type: 3}
 --- !u!4 &8663273644531018980 stripped
 Transform:
