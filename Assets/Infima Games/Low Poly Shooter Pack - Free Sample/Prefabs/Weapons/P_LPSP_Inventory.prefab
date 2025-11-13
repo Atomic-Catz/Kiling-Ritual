@@ -544,13 +544,19 @@ PrefabInstance:
       value: P_LPSP_WEP_Handgun_04_NEW
       objectReference: {fileID: 0}
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> origin/3D-Man
     - target: {fileID: 3882838340836119680, guid: a1f7c61ecbd38eb4d8ca94f9fa956023,
         type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+<<<<<<< HEAD
 =======
 >>>>>>> origin/Cristi
+=======
+>>>>>>> origin/3D-Man
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
