@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 96448838451407516}
   - component: {fileID: 114243545424532484}
   m_Layer: 15
-  m_Name: P_LPSP_PROJ_Bullet_01
+  m_Name: P_LPSP_PROJ_Bullet_Rifle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -221,7 +221,7 @@ MonoBehaviour:
   destroyOnImpact: 1
   minDestroyTime: 0.01
   maxDestroyTime: 0.05
-  damage: 25
+  damage: 50
   bloodImpactPrefabs:
   - {fileID: 4000011382548710, guid: d32aa916f50cac94db11e6f19821a58f, type: 3}
   metalImpactPrefabs:

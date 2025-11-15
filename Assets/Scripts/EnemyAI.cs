@@ -14,6 +14,10 @@ public class EnemyAI : MonoBehaviour
     public float health = 100f;
     public int meleeDamage = 10;
 
+    [Header("Score Settings")]
+    public int pointsOnDeath = 10;
+
+    
     [Header("Attack Settings")]
     public float attackRange = 2f;
     public float sightRange = 15f;
@@ -182,6 +186,10 @@ public class EnemyAI : MonoBehaviour
 
     private void DestroyEnemy()
     {
+        
+        if(ScoreManager.Instance != null)
+            ScoreManager.Instance.AddPoints(pointsOnDeath);
+        
         if (agent != null) agent.enabled = false;
         if (animator != null) animator.enabled = false;
 
