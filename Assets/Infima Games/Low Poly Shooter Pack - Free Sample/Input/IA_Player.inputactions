@@ -79,19 +79,10 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Lock Cursor",
-                    "type": "Button",
-                    "id": "9beb2473-ee7d-4a54-857b-b42a64a66a65",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "Inventory Next",
                     "type": "Button",
                     "id": "98c0547a-0a5e-484e-ba12-a7812face9b0",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -357,17 +348,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "Inventory Next Wheel",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "9837bdb8-e264-4c32-93bf-8013338f5c63",
-                    "path": "<Keyboard>/escape",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Lock Cursor",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

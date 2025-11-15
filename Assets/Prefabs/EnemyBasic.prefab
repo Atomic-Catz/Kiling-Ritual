@@ -8174,6 +8174,7 @@ MonoBehaviour:
   animator: {fileID: 0}
   health: 100
   meleeDamage: 10
+  pointsOnDeath: 15
   attackRange: 1
   sightRange: 200
   attackCooldown: 1.5

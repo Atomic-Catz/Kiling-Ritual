@@ -20,8 +20,10 @@ namespace InfimaGames.LowPolyShooterPack
         [SerializeField]
         private AudioClip audioClipRunning;
 
-        [Header("Speeds")]
-
+        [Header("Speeds")] 
+        [SerializeField]
+        private float jumpForce = 10f;
+        
         [SerializeField]
         private float speedWalking = 5.0f;
 
@@ -99,12 +101,23 @@ namespace InfimaGames.LowPolyShooterPack
         {
             equippedWeapon = playerCharacter.GetInventory().GetEquipped();
             PlayFootstepSounds();
+            Jump();
         }
 
         #endregion
 
         #region METHODS
 
+        void Jump()
+        {
+            if (grounded && Input.GetKeyDown(KeyCode.Space))
+            {
+                rigidBody.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
+
+                grounded = false;
+            }
+        }
+        
         private void MoveCharacter()
         {
             Vector2 frameInput = playerCharacter.GetInputMovement();
@@ -116,7 +129,7 @@ namespace InfimaGames.LowPolyShooterPack
                 movement *= speedWalking;
 
             movement = transform.TransformDirection(movement);
-            Velocity = new Vector3(movement.x, 0.0f, movement.z);
+            Velocity = new Vector3(movement.x, Velocity.y, movement.z);
         }
 
         private void PlayFootstepSounds()
