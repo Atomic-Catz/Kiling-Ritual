@@ -1,58 +1,36 @@
-﻿// Copyright 2021, Infima Games. All Rights Reserved.
-
-using UnityEngine;
+﻿using UnityEngine;
 using System.Globalization;
+using InfimaGames.LowPolyShooterPack;
 
 namespace InfimaGames.LowPolyShooterPack.Interface
 {
-    /// <summary>
-    /// Current Ammunition Text.
-    /// </summary>
     public class TextAmmunitionCurrent : ElementText
     {
-        #region FIELDS SERIALIZED
-        
         [Header("Colors")]
-        
-        [Tooltip("Determines if the color of the text should changes as ammunition is fired.")]
-        [SerializeField]
-        private bool updateColor = true;
-        
-        [Tooltip("Determines how fast the color changes as the ammunition is fired.")]
-        [SerializeField]
-        private float emptySpeed = 1.5f;
-        
-        [Tooltip("Color used on this text when the player character has no ammunition.")]
-        [SerializeField]
-        private Color emptyColor = Color.red;
-        
-        #endregion
-        
-        #region METHODS
-        
-        /// <summary>
-        /// Tick.
-        /// </summary>
+        [SerializeField] private bool updateColor = true;
+        [SerializeField] private float emptySpeed = 1.5f;
+        [SerializeField] private Color emptyColor = Color.red;
+
         protected override void Tick()
         {
-            //Current Ammunition.
+            if (equippedWeapon == null)
+                return;
+
+            // Current magazine ammo
             float current = equippedWeapon.GetAmmunitionCurrent();
-            //Total Ammunition.
+
+            // Total magazine size
             float total = equippedWeapon.GetAmmunitionTotal();
-            
-            //Update Text.
+
+            // Update text
             textMesh.text = current.ToString(CultureInfo.InvariantCulture);
 
-            //Determine if we should update the text's color.
+            // Update color based on ammo count
             if (updateColor)
             {
-                //Calculate Color Alpha. Helpful to make the text color change based on count.
                 float colorAlpha = (current / total) * emptySpeed;
-                //Lerp Color. This makes sure that the text color changes based on count.
-                textMesh.color = Color.Lerp(emptyColor, Color.white, colorAlpha);   
+                textMesh.color = Color.Lerp(emptyColor, Color.white, colorAlpha);
             }
         }
-        
-        #endregion
     }
 }

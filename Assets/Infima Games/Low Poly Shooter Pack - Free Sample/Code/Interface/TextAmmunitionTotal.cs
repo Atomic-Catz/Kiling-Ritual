@@ -1,28 +1,23 @@
-﻿// Copyright 2021, Infima Games. All Rights Reserved.
-
-using System.Globalization;
+﻿using System.Globalization;
+using InfimaGames.LowPolyShooterPack;
 
 namespace InfimaGames.LowPolyShooterPack.Interface
 {
-    /// <summary>
-    /// Total Ammunition Text.
-    /// </summary>
     public class TextAmmunitionTotal : ElementText
     {
-        #region METHODS
-        
-        /// <summary>
-        /// Tick.
-        /// </summary>
         protected override void Tick()
         {
-            //Total Ammunition.
-            float ammunitionTotal = equippedWeapon.GetAmmunitionTotal();
-            
-            //Update Text.
-            textMesh.text = ammunitionTotal.ToString(CultureInfo.InvariantCulture);
+            if (equippedWeapon == null)
+                return;
+
+            int reserveAmmo = 0;
+
+            // Only our custom Weapon class has reserve ammo
+            if (equippedWeapon is Weapon w)
+                reserveAmmo = w.GetReserveAmmunition();
+
+            // Update text
+            textMesh.text = reserveAmmo.ToString(CultureInfo.InvariantCulture);
         }
-        
-        #endregion
     }
 }

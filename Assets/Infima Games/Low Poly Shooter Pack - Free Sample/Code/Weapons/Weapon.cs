@@ -233,12 +233,15 @@ namespace InfimaGames.LowPolyShooterPack
             if (isReloading)
                 return false;
 
-            int magTotal = magazineBehaviour.GetAmmunitionTotal();
-            if (ammunitionCurrent >= magTotal)
+            if (ammunitionCurrent >= magazineBehaviour.GetAmmunitionTotal())
                 return false;
 
             if (reserveAmmunition <= 0)
+            {
+                if (audioClipFireEmpty != null)
+                    AudioSource.PlayClipAtPoint(audioClipFireEmpty, transform.position);
                 return false;
+            }
 
             if (animator != null)
                 animator.Play(HasAmmunition() ? "Reload" : "Reload Empty", 0, 0.0f);
@@ -274,12 +277,15 @@ namespace InfimaGames.LowPolyShooterPack
                 yield return null;
             }
 
-            // Transfer ammo from reserve to magazine
-            int magTotal = magazineBehaviour.GetAmmunitionTotal();
-            int needed = magTotal - ammunitionCurrent;
-            int taking = Mathf.Min(needed, reserveAmmunition);
-            reserveAmmunition -= taking;
-            ammunitionCurrent += taking;
+            // Only transfer ammo if reserve > 0
+            if (reserveAmmunition > 0)
+            {
+                int magTotal = magazineBehaviour.GetAmmunitionTotal();
+                int needed = magTotal - ammunitionCurrent;
+                int taking = Mathf.Min(needed, reserveAmmunition);
+                reserveAmmunition -= taking;
+                ammunitionCurrent += taking;
+            }
 
             // Wait remaining reload time
             float remaining = Mathf.Max(0f, reloadDuration - ammoApplyTime);
@@ -296,10 +302,17 @@ namespace InfimaGames.LowPolyShooterPack
 
         public override void Reload()
         {
-            if (!TryStartReload())
+            // TryStartReload returns true only if reload actually starts
+            if (TryStartReload())
             {
-                if (animator != null)
-                    animator.Play(HasAmmunition() ? "Reload" : "Reload Empty", 0, 0.0f);
+                // Reload animation and coroutine are already triggered inside TryStartReload
+                return;
+            }
+
+            // Optional: play empty click sound if no ammo at all
+            if (ammunitionCurrent == 0 && reserveAmmunition == 0 && audioClipFireEmpty != null)
+            {
+                AudioSource.PlayClipAtPoint(audioClipFireEmpty, transform.position);
             }
         }
 
@@ -352,8 +365,11 @@ namespace InfimaGames.LowPolyShooterPack
 
         public override void FillAmmunition(int amount)
         {
-            ammunitionCurrent = amount != 0 ? Mathf.Clamp(ammunitionCurrent + amount,
-                0, GetAmmunitionTotal()) : magazineBehaviour.GetAmmunitionTotal();
+            // Only refill from actual reserve ammo
+            if (amount == 0)
+                return; // Do nothing if no amount provided
+
+            ammunitionCurrent = Mathf.Clamp(ammunitionCurrent + amount, 0, GetAmmunitionTotal());
         }
 
         public void AddReserveAmmunition(int amount)

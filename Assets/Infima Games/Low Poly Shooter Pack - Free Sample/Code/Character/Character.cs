@@ -264,10 +264,26 @@ namespace InfimaGames.LowPolyShooterPack
         {
             if (!cursorLocked) return;
             if (!CanPlayAnimationReload()) return;
+
             switch (context)
             {
                 case {phase: InputActionPhase.Performed}:
-                    PlayReloadAnimation();
+
+                    // Only allow reload if there is ammo in magazine or reserve
+                    bool hasAmmo = equippedWeapon.GetAmmunitionCurrent() > 0 ||
+                                   (equippedWeapon is Weapon w && w.GetReserveAmmunition() > 0);
+
+                    if (hasAmmo)
+                    {
+                        PlayReloadAnimation();
+                    }
+                    else
+                    {
+                        // Optional: play empty click sound
+                        if (equippedWeapon is Weapon w2 && w2.GetAudioClipFireEmpty() != null)
+                            AudioSource.PlayClipAtPoint(w2.GetAudioClipFireEmpty(), transform.position);
+                    }
+
                     break;
             }
         }

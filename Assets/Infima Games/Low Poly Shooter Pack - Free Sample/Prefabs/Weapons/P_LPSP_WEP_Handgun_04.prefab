@@ -906,6 +906,11 @@ MonoBehaviour:
   audioClipReloadEmpty: {fileID: 8300000, guid: c565065df3907944b8b58f0d27066ba8,
     type: 3}
   audioClipFireEmpty: {fileID: 8300000, guid: 0c187ee2790c74c4e9985aa1ee1a12d5, type: 3}
+  reloadDuration: 1.5
+  ammoApplyTime: 0.6
+  reserveAmmunition: 90
+  autoReloadOnEmpty: 1
+  allowReloadInterrupt: 1
 --- !u!114 &737853272118125277
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1422,7 +1427,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 965555d451af4a2299927c4e3dd7ee09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ammunitionTotal: 8
+  ammunitionTotal: 15
   sprite: {fileID: 21300000, guid: d96558cda50c04347b69780fd84c6fc9, type: 3}
 --- !u!1001 &9177499893537934935
 PrefabInstance:

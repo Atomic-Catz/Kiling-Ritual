@@ -350,6 +350,11 @@ MonoBehaviour:
   audioClipReloadEmpty: {fileID: 8300000, guid: 1fe5c2e1733f354428fe88c1a7cbafe4,
     type: 3}
   audioClipFireEmpty: {fileID: 8300000, guid: 0c187ee2790c74c4e9985aa1ee1a12d5, type: 3}
+  reloadDuration: 1.5
+  ammoApplyTime: 0.6
+  reserveAmmunition: 90
+  autoReloadOnEmpty: 1
+  allowReloadInterrupt: 1
 --- !u!114 &8866888881564896686
 MonoBehaviour:
   m_ObjectHideFlags: 0
