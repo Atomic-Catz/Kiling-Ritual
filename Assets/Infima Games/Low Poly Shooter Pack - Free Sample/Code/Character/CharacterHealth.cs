@@ -57,4 +57,31 @@ namespace InfimaGames.LowPolyShooterPack
             isDead = true;
         }
     }
+
+    public class HealInput : MonoBehaviour
+    {
+        [Tooltip("Press the key to heal")]
+        public KeyCode healKey = KeyCode.H;
+
+        [Tooltip("Amount to heal")]
+        public float healAmount = 30f;
+
+        private CharacterHealth health;
+
+        void Awake()
+        {
+            health = GetComponent<CharacterHealth>();
+        }
+
+        void Update()
+        {
+            if (health == null)
+                return;
+
+            if (Input.GetKeyDown(healKey))
+            {
+                health.Heal(healAmount);
+            }
+        }
+    }
 }
