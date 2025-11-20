@@ -12,6 +12,14 @@ namespace InfimaGames.LowPolyShooterPack
     {
         #region FIELDS SERIALIZED
 
+        [Header("Healing Settings")]
+        [SerializeField] private float healAmount = 30f;         
+        [SerializeField] private float healCooldown = 5f;        
+        [SerializeField] private float healDuration = 2f;        
+
+        private float lastHealTime = -Mathf.Infinity;
+        private Coroutine healCoroutine;
+        
         [Header("Inventory")]
         
         [Tooltip("Inventory.")]
@@ -58,6 +66,8 @@ namespace InfimaGames.LowPolyShooterPack
         private WeaponAttachmentManagerBehaviour weaponAttachmentManager;
         private ScopeBehaviour equippedWeaponScope;
         private MagazineBehaviour equippedWeaponMagazine;
+        private CharacterHealth characterHealth;
+
 
         private bool reloading;
         private bool inspecting;
@@ -90,6 +100,9 @@ namespace InfimaGames.LowPolyShooterPack
             UpdateCursorState();
 
             characterKinematics = GetComponent<CharacterKinematics>();
+
+            characterHealth = GetComponent<CharacterHealth>();
+            
             inventory.Init();
             RefreshWeaponSetup();
         }
@@ -236,6 +249,50 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region INPUT
 
+        public void OnTryHeal(InputAction.CallbackContext context)
+        {
+            if (!cursorLocked || characterHealth == null)
+                return;
+
+            if (context.phase != InputActionPhase.Started)
+                return;
+
+            if (reloading || inspecting || holstering)
+                return;
+
+            if (characterHealth.GetCurrentHealth() >= characterHealth.GetMaxHealth())
+                return;
+
+            if (Time.time - lastHealTime < healCooldown)
+            {
+                Debug.Log("Heal on cooldown!");
+                return;
+            }
+
+            // Start gradual healing
+            if (healCoroutine != null) StopCoroutine(healCoroutine);
+            healCoroutine = StartCoroutine(GradualHeal(healAmount, healDuration));
+            lastHealTime = Time.time;
+        }
+        
+        private IEnumerator GradualHeal(float totalAmount, float duration)
+        {
+            float healed = 0f;
+            float rate = totalAmount / duration;
+
+            while (healed < totalAmount)
+            {
+                if (characterHealth.GetCurrentHealth() >= characterHealth.GetMaxHealth())
+                    break;
+
+                float healThisFrame = rate * Time.deltaTime;
+                characterHealth.Heal(healThisFrame);
+                healed += healThisFrame;
+
+                yield return null;
+            }
+        }
+        
         public void OnTryFire(InputAction.CallbackContext context)
         {
             if (!cursorLocked) return;
@@ -287,7 +344,7 @@ namespace InfimaGames.LowPolyShooterPack
                     break;
             }
         }
-
+    
         public void OnTryInspect(InputAction.CallbackContext context)
         {
             if (!cursorLocked) return;

@@ -1,10 +1,10 @@
-using System;
 using UnityEngine;
 using TMPro;
 
 public class CharacterScoreUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private int playerId = 0; // assign the player ID in inspector
 
     private void Awake()
     {
@@ -18,6 +18,6 @@ public class CharacterScoreUI : MonoBehaviour
     private void Update()
     {
         if (ScoreManager.Instance != null)
-            scoreText.text = $"$ {ScoreManager.Instance.GetScore()}";
+            scoreText.text = $"$ {ScoreManager.Instance.GetScore(playerId)}";
     }
 }

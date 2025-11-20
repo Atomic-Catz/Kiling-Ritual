@@ -41,12 +41,16 @@ namespace InfimaGames.LowPolyShooterPack
             if (isDead) return; // Can't heal a dead character
             if (amount <= 0) return;
 
+            float before = currentHealth;
+
             currentHealth += amount;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
-            Debug.Log($"[CharacterHealth] {gameObject.name} healed {amount}. Current health: {currentHealth}");
+            Debug.Log($"[CharacterHealth] Healed {amount}. Health: {before} -> {currentHealth}");
+
+            OnHealthChanged?.Invoke(currentHealth, maxHealth);
         }
+
 
         public float GetCurrentHealth() => currentHealth;
         public float GetMaxHealth() => maxHealth;
@@ -55,33 +59,6 @@ namespace InfimaGames.LowPolyShooterPack
         {
             if (isDead) return; // Prevent multiple calls
             isDead = true;
-        }
-    }
-
-    public class HealInput : MonoBehaviour
-    {
-        [Tooltip("Press the key to heal")]
-        public KeyCode healKey = KeyCode.H;
-
-        [Tooltip("Amount to heal")]
-        public float healAmount = 30f;
-
-        private CharacterHealth health;
-
-        void Awake()
-        {
-            health = GetComponent<CharacterHealth>();
-        }
-
-        void Update()
-        {
-            if (health == null)
-                return;
-
-            if (Input.GetKeyDown(healKey))
-            {
-                health.Heal(healAmount);
-            }
         }
     }
 }

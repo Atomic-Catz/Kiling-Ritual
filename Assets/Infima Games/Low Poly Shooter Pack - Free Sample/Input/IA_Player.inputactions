@@ -61,6 +61,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Heal",
+                    "type": "Button",
+                    "id": "c51a37c0-a05a-4732-9b85-da489c512381",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Jump",
                     "type": "Button",
                     "id": "6bf74daf-8a98-48de-b071-9a4f6efdc3f3",
@@ -73,15 +82,6 @@
                     "name": "Run",
                     "type": "Button",
                     "id": "779a6091-f045-4535-8635-505915368372",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Inventory Next",
-                    "type": "Button",
-                    "id": "98c0547a-0a5e-484e-ba12-a7812face9b0",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -254,28 +254,6 @@
                 },
                 {
                     "name": "",
-                    "id": "64767df0-dd96-438b-878e-fe24248339dd",
-                    "path": "<Keyboard>/q",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Inventory Next",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "ced9121a-056b-40fc-a663-9d1e81066727",
-                    "path": "<Gamepad>/buttonNorth",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Inventory Next",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "6473f700-7e8d-42ea-a8d7-b52064620abb",
                     "path": "<Gamepad>/leftStick",
                     "interactions": "",
@@ -348,6 +326,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Inventory Next Wheel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c35705d0-8c71-4e93-b58e-937259bca8a8",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Heal",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
