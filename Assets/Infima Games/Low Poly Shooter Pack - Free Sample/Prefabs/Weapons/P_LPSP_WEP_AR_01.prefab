@@ -278,7 +278,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8445401694593213622
 Transform:
   m_ObjectHideFlags: 0
@@ -352,7 +352,7 @@ MonoBehaviour:
   audioClipFireEmpty: {fileID: 8300000, guid: 0c187ee2790c74c4e9985aa1ee1a12d5, type: 3}
   reloadDuration: 1.5
   ammoApplyTime: 0.6
-  reserveAmmunition: 90
+  reserveAmmunition: 180
   autoReloadOnEmpty: 1
   allowReloadInterrupt: 1
 --- !u!114 &8866888881564896686

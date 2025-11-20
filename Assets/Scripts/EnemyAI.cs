@@ -177,7 +177,8 @@ public class EnemyAI : MonoBehaviour
     #endregion
 
     #region Damage & Death
-    public void TakeDamage(int damage)
+    private string lastAttackerId;
+    public void TakeDamage(int damage, int attackerId = -1)
     {
         health -= damage;
         if (health <= 0f)
@@ -186,10 +187,11 @@ public class EnemyAI : MonoBehaviour
 
     private void DestroyEnemy()
     {
-        
-        if(ScoreManager.Instance != null)
-            ScoreManager.Instance.AddPoints(pointsOnDeath);
-        
+        // If using multiplayer / multiple players
+        int killerPlayerId = 0; // Replace with actual player ID who killed the enemy
+        if (ScoreManager.Instance != null)
+            ScoreManager.Instance.AddPoints(killerPlayerId, pointsOnDeath);
+
         if (agent != null) agent.enabled = false;
         if (animator != null) animator.enabled = false;
 
@@ -205,6 +207,7 @@ public class EnemyAI : MonoBehaviour
 
         Destroy(gameObject, 5f);
     }
+
     #endregion
 
     #region Gizmos
