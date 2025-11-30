@@ -21,7 +21,7 @@ namespace InfimaGames.LowPolyShooterPack
         /// Currently equipped index.
         /// </summary>
         private int equippedIndex = -1;
-
+        
         #endregion
         
         #region METHODS
@@ -38,7 +38,7 @@ namespace InfimaGames.LowPolyShooterPack
             //Equip.
             Equip(equippedAtStart);
         }
-
+        
         public override WeaponBehaviour Equip(int index)
         {
             //If we have no weapons, we can't really equip anything.
@@ -96,6 +96,8 @@ namespace InfimaGames.LowPolyShooterPack
 
         public override WeaponBehaviour GetEquipped() => equipped;
         public override int GetEquippedIndex() => equippedIndex;
+        
+        public override WeaponBehaviour[] GetAllWeapons() => weapons;
 
         #endregion
     }

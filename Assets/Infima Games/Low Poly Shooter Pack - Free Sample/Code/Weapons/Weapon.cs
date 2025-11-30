@@ -96,6 +96,9 @@ namespace InfimaGames.LowPolyShooterPack
         [Tooltip("Amount of ammunition stored in reserve (not in the current magazine).")]
         [SerializeField]
         private int reserveAmmunition = 90;
+        [Tooltip("Amount of ammunition allowed in reserve.")]
+        [SerializeField]
+        private int reserveAmmunitionMax = 90;
 
         [Tooltip("Automatically start reload when magazine becomes empty.")]
         [SerializeField]
@@ -222,7 +225,9 @@ namespace InfimaGames.LowPolyShooterPack
 
         public override RuntimeAnimatorController GetAnimatorController() => controller;
         public override WeaponAttachmentManagerBehaviour GetAttachmentManager() => attachmentManager;
-
+        
+        public int GetReserveAmmunitionMax() => reserveAmmunitionMax;
+        
         #endregion
 
         #region METHODS
@@ -374,7 +379,7 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void AddReserveAmmunition(int amount)
         {
-            reserveAmmunition = Mathf.Max(0, reserveAmmunition + amount);
+            reserveAmmunition = Mathf.Clamp(reserveAmmunition + amount, 0, reserveAmmunitionMax);
         }
 
         public override void EjectCasing()
