@@ -2518,6 +2518,10 @@ MonoBehaviour:
   healAmount: 30
   healCooldown: 5
   healDuration: 2
+  interactRange: 3
+  interactMask:
+    serializedVersion: 2
+    m_Bits: 1048576
   inventory: {fileID: 3517440915758658371}
   cameraWorld: {fileID: 1558257853334525304}
   dampTimeLocomotion: 0.1
@@ -2736,6 +2740,22 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: c51a37c0-a05a-4732-9b85-da489c512381
     m_ActionName: 'Player/Heal[/Keyboard/q]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8048123243130234565}
+        m_TargetAssemblyTypeName: InfimaGames.LowPolyShooterPack.Character, Assembly-CSharp
+        m_MethodName: OnTryInteract
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 4faf823c-49bb-4572-a603-f5c1f97c7d81
+    m_ActionName: 'Player/Interact[/Keyboard/e]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player

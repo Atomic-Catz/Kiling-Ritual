@@ -20,6 +20,12 @@ namespace InfimaGames.LowPolyShooterPack
         private float lastHealTime = -Mathf.Infinity;
         private Coroutine healCoroutine;
         
+		[Header("Interaction")]
+		[SerializeField] private float interactRange = 3f;
+		[SerializeField] private LayerMask interactMask;
+
+        private IInteractable currentInteractable;
+
         [Header("Inventory")]
         
         [Tooltip("Inventory.")]
@@ -129,6 +135,7 @@ namespace InfimaGames.LowPolyShooterPack
             }
 
             UpdateAnimator();
+            CheckForInteractable();
         }
 
         protected override void LateUpdate()
@@ -156,6 +163,19 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region METHODS
 
+
+        private void CheckForInteractable()
+        {
+            currentInteractable = null;
+
+            Ray ray = cameraWorld.ViewportPointToRay(new Vector3(0.5f, 0.5f));
+            if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactMask))
+            {
+                currentInteractable = hit.collider.GetComponent<IInteractable>();
+            }
+        }
+        
+        
         private void UpdateAnimator()
         {
             characterAnimator.SetFloat(HashMovement, Mathf.Clamp01(Mathf.Abs(axisMovement.x) + Mathf.Abs(axisMovement.y)), dampTimeLocomotion, Time.deltaTime);
@@ -249,6 +269,16 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region INPUT
 
+
+        public void OnTryInteract(InputAction.CallbackContext context)
+        {
+            if (!cursorLocked) return;
+            if (context.phase != InputActionPhase.Performed) return;
+            
+            if (currentInteractable != null)
+                currentInteractable.Interact(this);
+        }
+        
         public void OnTryHeal(InputAction.CallbackContext context)
         {
             if (!cursorLocked || characterHealth == null)
