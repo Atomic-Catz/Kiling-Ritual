@@ -1,0 +1,41 @@
+using System.Collections;
+using UnityEngine;
+
+namespace InfimaGames.LowPolyShooterPack
+{
+    public class OneShotKillBuff : MonoBehaviour
+    {
+        private bool active = false;
+        private Coroutine expireCoroutine;
+
+        public void Grant(float duration = 5f)
+        {
+            active = true;
+
+            if (expireCoroutine != null)
+                StopCoroutine(expireCoroutine);
+
+            expireCoroutine = StartCoroutine(ExpireAfter(duration));
+        }
+
+        public bool IsActive() => active;
+
+        public void Clear()
+        {
+            if (expireCoroutine != null)
+            {
+                StopCoroutine(expireCoroutine);
+                expireCoroutine = null;
+            }
+
+            active = false;
+        }
+
+        private IEnumerator ExpireAfter(float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            active = false;
+            expireCoroutine = null;
+        }
+    }
+}

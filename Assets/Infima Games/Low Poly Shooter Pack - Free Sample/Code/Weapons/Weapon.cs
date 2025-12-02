@@ -364,6 +364,21 @@ namespace InfimaGames.LowPolyShooterPack
 
             //Spawn projectile from the projectile spawn point.
             GameObject projectile = Instantiate(prefabProjectile, muzzleSocket.position, rotation);
+            //For OneShot Buff
+            if (characterBehaviour != null)
+            {
+                OneShotKillBuff buff = characterBehaviour.gameObject.GetComponent<OneShotKillBuff>();
+                if (buff == null)
+                    buff = characterBehaviour.gameObject.GetComponentInChildren<OneShotKillBuff>();
+
+                if (buff != null && buff.IsActive())
+                {
+                    projectile.AddComponent<OneShotProjectileMarker>();
+                }
+            }
+
+
+
             //Add velocity to the projectile.
             projectile.GetComponent<Rigidbody>().linearVelocity = projectile.transform.forward * projectileImpulse;
         }
