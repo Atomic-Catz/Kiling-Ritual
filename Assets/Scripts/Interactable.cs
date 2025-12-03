@@ -4,6 +4,6 @@ using InfimaGames.LowPolyShooterPack;
 public interface IInteractable
 {
     string GetInteractText();
-    void Interact(Character user);
+    void Interact(CharacterBehaviour user);
 }
 
