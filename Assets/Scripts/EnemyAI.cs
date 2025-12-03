@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using InfimaGames.LowPolyShooterPack;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyAI : MonoBehaviour
@@ -188,7 +189,7 @@ public class EnemyAI : MonoBehaviour
     {
         int multiplier = 1;
 
-        var triple = FindObjectOfType<InfimaGames.LowPolyShooterPack.TripleScoreBuff>();
+        var triple = FindObjectOfType<TripleScoreBuff>();
         if (triple != null && triple.IsActive())
             multiplier = 3;
 
