@@ -177,7 +177,6 @@ public class EnemyAI : MonoBehaviour
     #endregion
 
     #region Damage & Death
-    private string lastAttackerId;
     public void TakeDamage(int damage, int attackerId = -1)
     {
         health -= damage;
@@ -187,10 +186,14 @@ public class EnemyAI : MonoBehaviour
 
     private void DestroyEnemy()
     {
-        // If using multiplayer / multiple players
-        int killerPlayerId = 0; // Replace with actual player ID who killed the enemy
+        int multiplier = 1;
+
+        var triple = FindObjectOfType<InfimaGames.LowPolyShooterPack.TripleScoreBuff>();
+        if (triple != null && triple.IsActive())
+            multiplier = 3;
+
         if (ScoreManager.Instance != null)
-            ScoreManager.Instance.AddPoints(killerPlayerId, pointsOnDeath);
+            ScoreManager.Instance.AddPoints(0, pointsOnDeath * multiplier);
 
         if (agent != null) agent.enabled = false;
         if (animator != null) animator.enabled = false;
@@ -207,7 +210,6 @@ public class EnemyAI : MonoBehaviour
 
         Destroy(gameObject, 5f);
     }
-
     #endregion
 
     #region Gizmos
