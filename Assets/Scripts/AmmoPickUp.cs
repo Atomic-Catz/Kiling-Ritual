@@ -10,36 +10,59 @@ namespace InfimaGames.LowPolyShooterPack
         [Header("Pickup Settings")]
         public bool destroyOnPickup = true;
 
+        [Header("Price")]
+        public int cost = 250;
+
         public string GetInteractText()
         {
-            return $"Pick up {ammoAmount} ammo";
+            return $"Buy {ammoAmount} Ammo - {cost} Points";
         }
 
-        public void Interact(Character user)
+        public void Interact(CharacterBehaviour user)
         {
-            var inventory = user.GetInventory();
-            if (inventory == null) return;
+            // Get the player's ID (you may change this depending on your setup)
+            int playerId = 0;
 
-            var weapons = inventory.GetAllWeapons();
-            if (weapons == null || weapons.Length == 0) return;
-
-            bool addedAmmo = false;
-
-            foreach (var weaponBehaviour in weapons)
+            // Check score
+            int score = ScoreManager.Instance.GetScore(playerId);
+            if (score < cost)
             {
-                if (weaponBehaviour is Weapon weapon)
-                {
-                    // Only add ammo if reserve is not full
-                    if (weapon.GetReserveAmmunition() < weapon.GetReserveAmmunitionMax())
-                    {
-                        weapon.AddReserveAmmunition(ammoAmount);
-                        addedAmmo = true;
-                    }
-                }
+                Debug.Log("Not enough points!");
+                return;
             }
 
-            // Only destroy pickup if ammo was actually added
-            if (addedAmmo && destroyOnPickup)
+            // Get all weapons
+            WeaponBehaviour[] weapons = user.GetInventory().GetAllWeapons();
+            if (weapons == null)
+                return;
+
+            bool addedAnyAmmo = false;
+
+            foreach (WeaponBehaviour wb in weapons)
+            {
+                Weapon w = wb as Weapon;
+                if (w == null)
+                    continue;
+
+                // Skip full weapons
+                if (w.IsReserveFull())
+                    continue;
+
+                w.AddReserveAmmunition(ammoAmount);
+                addedAnyAmmo = true;
+            }
+
+            if (!addedAnyAmmo)
+            {
+                Debug.Log("All weapons already full. Cannot buy ammo.");
+                return;
+            }
+
+            // Deduct score
+            ScoreManager.Instance.AddPoints(playerId, -cost);
+
+            // Destroy object
+            if (destroyOnPickup)
                 Destroy(gameObject);
         }
     }

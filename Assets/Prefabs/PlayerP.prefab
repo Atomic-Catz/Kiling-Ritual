@@ -1177,7 +1177,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 36151
+    m_Bits: 1084727
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -2315,6 +2315,7 @@ GameObject:
   - component: {fileID: 8328678243909761723}
   - component: {fileID: 1637088502831556917}
   - component: {fileID: 985984465613868681}
+  - component: {fileID: 5895744559188054421}
   m_Layer: 10
   m_Name: PlayerP
   m_TagString: Player
@@ -2802,6 +2803,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InfimaGames.LowPolyShooterPack.CharacterHealth
   maxHealth: 100
+--- !u!114 &5895744559188054421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6386732213705425414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b35b1f42c5a77924dbc3d1335b6e50f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InfimaGames.LowPolyShooterPack.OneShotKillBuff
 --- !u!1 &6467192901043720777
 GameObject:
   m_ObjectHideFlags: 0

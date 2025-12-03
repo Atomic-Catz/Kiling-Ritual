@@ -223,6 +223,11 @@ namespace InfimaGames.LowPolyShooterPack
         public override bool IsFull() => ammunitionCurrent == magazineBehaviour.GetAmmunitionTotal();
         public override bool HasAmmunition() => ammunitionCurrent > 0;
 
+        public bool IsReserveFull()
+        {
+            return reserveAmmunition >= reserveAmmunitionMax;
+        }
+
         public override RuntimeAnimatorController GetAnimatorController() => controller;
         public override WeaponAttachmentManagerBehaviour GetAttachmentManager() => attachmentManager;
         
@@ -364,22 +369,21 @@ namespace InfimaGames.LowPolyShooterPack
 
             //Spawn projectile from the projectile spawn point.
             GameObject projectile = Instantiate(prefabProjectile, muzzleSocket.position, rotation);
-            //For OneShot Buff
+            // For OneShot Buff
             if (characterBehaviour != null)
             {
                 OneShotKillBuff buff = characterBehaviour.gameObject.GetComponent<OneShotKillBuff>();
                 if (buff == null)
                     buff = characterBehaviour.gameObject.GetComponentInChildren<OneShotKillBuff>();
 
-                if (buff != null && buff.IsActive())
+                if (buff != null && buff.IsActive)
                 {
-                    projectile.AddComponent<OneShotProjectileMarker>();
+                    Projectile projScript = projectile.GetComponent<Projectile>();
+                    if (projScript != null)
+                        projScript.instaKill = true;
                 }
             }
 
-
-
-            //Add velocity to the projectile.
             projectile.GetComponent<Rigidbody>().linearVelocity = projectile.transform.forward * projectileImpulse;
         }
 

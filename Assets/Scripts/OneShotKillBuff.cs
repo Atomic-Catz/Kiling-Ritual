@@ -1,41 +1,29 @@
-using System.Collections;
 using UnityEngine;
+using System.Collections;
 
 namespace InfimaGames.LowPolyShooterPack
 {
     public class OneShotKillBuff : MonoBehaviour
     {
-        private bool active = false;
-        private Coroutine expireCoroutine;
+        [Header("Buff Settings")]
+        [Tooltip("Duration in seconds the Insta-Kill buff lasts.")]
+        public float duration = 10f;
 
-        public void Grant(float duration = 5f)
+        public bool IsActive { get; private set; }
+
+        public void Activate()
         {
-            active = true;
+            if (IsActive)
+                StopAllCoroutines();
 
-            if (expireCoroutine != null)
-                StopCoroutine(expireCoroutine);
-
-            expireCoroutine = StartCoroutine(ExpireAfter(duration));
+            StartCoroutine(BuffRoutine());
         }
 
-        public bool IsActive() => active;
-
-        public void Clear()
+        private IEnumerator BuffRoutine()
         {
-            if (expireCoroutine != null)
-            {
-                StopCoroutine(expireCoroutine);
-                expireCoroutine = null;
-            }
-
-            active = false;
-        }
-
-        private IEnumerator ExpireAfter(float duration)
-        {
+            IsActive = true;
             yield return new WaitForSeconds(duration);
-            active = false;
-            expireCoroutine = null;
+            IsActive = false;
         }
     }
 }
