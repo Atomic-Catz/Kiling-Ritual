@@ -65,6 +65,19 @@ public class EnemyAI : MonoBehaviour
     {
         if (agent == null || !agent.isOnNavMesh) return;
 
+        var camo = FindObjectOfType<CamoBuff>();
+        if (camo != null && camo.IsActive())
+        {
+            agent.ResetPath();
+            agent.isStopped = true;
+            if (animator != null)
+            {
+                animator.SetBool("IsWalking", false);
+                animator.ResetTrigger("IsAttacking");
+            }
+            return;
+        }
+
         playerInSight = Physics.CheckSphere(transform.position, sightRange, isPlayer);
         playerInAttack = Physics.CheckSphere(transform.position, attackRange, isPlayer);
 
@@ -141,6 +154,19 @@ public class EnemyAI : MonoBehaviour
     #region Attack
     private void AttackPlayer()
     {
+        var camo = FindObjectOfType<CamoBuff>();
+        if (camo != null && camo.IsActive())
+        {
+            agent.ResetPath();
+            agent.isStopped = true;
+            if (animator != null)
+            {
+                animator.SetBool("IsWalking", false);
+                animator.ResetTrigger("IsAttacking");
+            }
+            return;
+        }
+
         if (agent == null || !agent.isOnNavMesh || player == null) return;
 
         // Stop moving while attacking
