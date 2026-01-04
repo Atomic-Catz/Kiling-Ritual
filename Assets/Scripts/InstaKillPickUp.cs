@@ -14,6 +14,10 @@ namespace InfimaGames.LowPolyShooterPack
         [Tooltip("Color of the pickup.")]
         public Color pickupColor = Color.red;
 
+        [Header("Pickup Settings")]
+        [Tooltip("Time in seconds before the pickup disappears if not collected.")]
+        public float despawnTime = 15f;
+        
         private Renderer objectRenderer;
 
         private void Awake()
@@ -23,6 +27,9 @@ namespace InfimaGames.LowPolyShooterPack
             {
                 objectRenderer.material.color = pickupColor;
             }
+            
+            // Start auto-despawn timer
+            Destroy(gameObject, despawnTime);
         }
 
         private void Update()

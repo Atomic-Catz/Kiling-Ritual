@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using InfimaGames.LowPolyShooterPack;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyAI : MonoBehaviour
@@ -18,15 +19,14 @@ public class EnemyAI : MonoBehaviour
     [Header("Score Settings")]
     public int pointsOnDeath = 10;
 
-    
     [Header("Attack Settings")]
     public float attackRange = 2f;
     public float sightRange = 15f;
     public float attackCooldown = 1.5f;
 
     [Header("Movement Settings")]
-    public float walkSpeed = 2f;   // Speed when patrolling
-    public float chaseSpeed = 4f;  // Speed when chasing
+    public float walkSpeed = 2f;   // Patrol speed
+    public float chaseSpeed = 4f;  // Chase speed
 
     [Header("Patrol Settings")]
     public float walkPointRange = 10f;
@@ -36,9 +36,15 @@ public class EnemyAI : MonoBehaviour
     [Header("Layers")]
     public LayerMask isPlayer;
 
+    [Header("Powerup Drop Settings")]
+    [Tooltip("Powerups that can drop when this enemy dies.")]
+    public List<PowerupDrop> powerupDrops = new List<PowerupDrop>();
+
     private bool playerInSight;
     private bool playerInAttack;
     private float lastAttackTime = -999f;
+
+    #region UNITY
 
     private void Awake()
     {
@@ -95,12 +101,14 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    #region Patrol
+    #endregion
+
+    #region PATROL
+
     private void Patroling()
     {
         if (agent == null || !agent.isOnNavMesh) return;
 
-        // Set patrol speed
         agent.speed = walkSpeed;
 
         if (!walkPointSet) SearchWalkPoint();
@@ -133,25 +141,27 @@ public class EnemyAI : MonoBehaviour
             walkPointSet = false;
         }
     }
+
     #endregion
 
-    #region Chase
+    #region CHASE
+
     private void ChasePlayer()
     {
         if (agent == null || !agent.isOnNavMesh || player == null) return;
 
-        // Set chase speed
         agent.speed = chaseSpeed;
-
         agent.isStopped = false;
         agent.SetDestination(player.position);
 
         if (animator != null)
             animator.SetBool("IsWalking", true);
     }
+
     #endregion
 
-    #region Attack
+    #region ATTACK
+
     private void AttackPlayer()
     {
         var camo = FindObjectOfType<CamoBuff>();
@@ -169,19 +179,15 @@ public class EnemyAI : MonoBehaviour
 
         if (agent == null || !agent.isOnNavMesh || player == null) return;
 
-        // Stop moving while attacking
         agent.ResetPath();
         agent.isStopped = true;
 
-        // Face the player
         Vector3 lookPos = new Vector3(player.position.x, transform.position.y, player.position.z);
         transform.LookAt(lookPos);
 
-        // Check cooldown
         if (Time.time - lastAttackTime < attackCooldown) return;
         lastAttackTime = Time.time;
 
-        // Play attack animation
         if (animator != null)
         {
             animator.SetBool("IsWalking", false);
@@ -189,7 +195,6 @@ public class EnemyAI : MonoBehaviour
             animator.SetTrigger("IsAttacking");
         }
 
-        // Deal damage
         Transform origin = (attackPoint != null) ? attackPoint : transform;
         Collider[] hits = Physics.OverlapSphere(origin.position, attackRange, isPlayer);
         foreach (var hit in hits)
@@ -201,9 +206,11 @@ public class EnemyAI : MonoBehaviour
             }
         }
     }
+
     #endregion
 
-    #region Damage & Death
+    #region DAMAGE & DEATH
+
     public void TakeDamage(int damage, int attackerId = -1)
     {
         health -= damage;
@@ -235,11 +242,44 @@ public class EnemyAI : MonoBehaviour
         foreach (Transform child in transform)
             child.gameObject.layer = LayerMask.NameToLayer("DeadEnemy");
 
+        // Try to spawn powerups
+        TrySpawnPowerups();
+
         Destroy(gameObject, 5f);
     }
+
     #endregion
 
-    #region Gizmos
+    #region POWERUP DROPS
+
+    [System.Serializable]
+    public class PowerupDrop
+    {
+        [Tooltip("Powerup prefab to spawn")]
+        public GameObject prefab;
+
+        [Range(0f, 100f)]
+        [Tooltip("Chance (%) this powerup will drop on death")]
+        public float dropChance = 10f;
+    }
+
+    private void TrySpawnPowerups()
+    {
+        if (powerupDrops.Count == 0) return;
+
+        // Pick a random powerup from the list
+        var drop = powerupDrops[Random.Range(0, powerupDrops.Count)];
+        if (drop.prefab == null) return;
+
+        float roll = Random.Range(0f, 100f);
+        if (roll <= drop.dropChance)
+            Instantiate(drop.prefab, transform.position + Vector3.up, Quaternion.identity);
+    }
+
+    #endregion
+
+    #region GIZMOS
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
@@ -247,5 +287,6 @@ public class EnemyAI : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, sightRange);
     }
+
     #endregion
 }
