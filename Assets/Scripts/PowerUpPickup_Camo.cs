@@ -21,7 +21,7 @@ namespace InfimaGames.LowPolyShooterPack
             var rend = GetComponent<Renderer>();
             if (rend != null)
             {
-                rend.material.color = Color.yellow;
+                rend.material.color = Color.purple;
             }
         }
 

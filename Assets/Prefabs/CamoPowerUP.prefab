@@ -124,7 +124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b77023697c157940aab0a105b9784f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InfimaGames.LowPolyShooterPack.PowerUpPickup_Camo
-  floatAmplitude: 0.25
+  floatAmplitude: 0
   floatSpeed: 1
   rotationSpeed: 60
   playerTag: Player
