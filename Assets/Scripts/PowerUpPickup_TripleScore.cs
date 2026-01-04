@@ -16,6 +16,9 @@ namespace InfimaGames.LowPolyShooterPack
         [Tooltip("How long the triple-score buff lasts (seconds)")]
         public float buffDuration = 5f;
 
+        [Tooltip("Time in seconds before the pickup disappears if not collected.")]
+        public float despawnTime = 15f;
+        
         Vector3 startPos;
 
         void Awake()
@@ -23,6 +26,9 @@ namespace InfimaGames.LowPolyShooterPack
             startPos = transform.position;
             var rend = GetComponent<Renderer>();
             if (rend != null) rend.material.color = Color.green;
+            
+            // Start auto-despawn timer
+            Destroy(gameObject, despawnTime);
         }
 
         void Update()

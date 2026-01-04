@@ -1369,7 +1369,7 @@ GameObject:
   - component: {fileID: 42315685535120196}
   m_Layer: 0
   m_Name: EnemyCrawler
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1502,6 +1502,7 @@ MonoBehaviour:
   animator: {fileID: 0}
   health: 100
   meleeDamage: 2
+  pointsOnDeath: 10
   attackRange: 1
   sightRange: 200
   attackCooldown: 0.5
@@ -1511,6 +1512,16 @@ MonoBehaviour:
   isPlayer:
     serializedVersion: 2
     m_Bits: 1024
+  powerupDrops:
+  - prefab: {fileID: 5185300354125306302, guid: c2ac58164da3fa745921ab374f49bc4c,
+      type: 3}
+    dropChance: 5
+  - prefab: {fileID: 5411139206228636758, guid: 4b43fcbf54a794943b4d8f74f6e3129c,
+      type: 3}
+    dropChance: 5
+  - prefab: {fileID: 8965098459893207902, guid: d56018ebe2cb1f445b26c1803ffffa55,
+      type: 3}
+    dropChance: 2
 --- !u!114 &7595705784671016759
 MonoBehaviour:
   m_ObjectHideFlags: 0
