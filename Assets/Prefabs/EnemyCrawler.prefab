@@ -1522,6 +1522,12 @@ MonoBehaviour:
   - prefab: {fileID: 8965098459893207902, guid: d56018ebe2cb1f445b26c1803ffffa55,
       type: 3}
     dropChance: 2
+  - prefab: {fileID: 6948080174084746554, guid: 28edd3474670bf94fa6be2f5edecbeca,
+      type: 3}
+    dropChance: 5
+  - prefab: {fileID: 7840264499678043192, guid: be2e25f76a5022c4abac3a3083975105,
+      type: 3}
+    dropChance: 5
 --- !u!114 &7595705784671016759
 MonoBehaviour:
   m_ObjectHideFlags: 0
