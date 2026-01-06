@@ -12,6 +12,10 @@ namespace InfimaGames.LowPolyShooterPack
         [Header("Pickup")]
         public string playerTag = "Player";
         public float buffDuration = 5f;
+        
+        [Header("Pickup Settings")]
+        [Tooltip("Seconds before the pickup disappears if not collected.")]
+        public float despawnTime = 15f;
 
         Vector3 startPos;
 
@@ -23,6 +27,10 @@ namespace InfimaGames.LowPolyShooterPack
             {
                 rend.material.color = Color.purple;
             }
+            
+            // Auto-despawn
+            Destroy(gameObject, despawnTime);
+            
         }
 
         void Update()
