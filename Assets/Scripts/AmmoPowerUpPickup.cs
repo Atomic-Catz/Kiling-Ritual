@@ -11,7 +11,7 @@ namespace InfimaGames.LowPolyShooterPack
 
         [Header("Visuals")]
         public Vector3 rotationSpeed = new Vector3(0f, 180f, 0f);
-        public Color pickupColor = Color.cyan;
+        //public Color pickupColor = Color.cyan;
 
         [Header("Pickup Settings")]
         [Tooltip("Seconds before the pickup disappears if not collected.")]
@@ -26,9 +26,9 @@ namespace InfimaGames.LowPolyShooterPack
             col.isTrigger = true;
 
             // Color
-            rend = GetComponentInChildren<Renderer>();
-            if (rend != null)
-                rend.material.color = pickupColor;
+            //rend = GetComponentInChildren<Renderer>();
+            //if (rend != null)
+                //rend.material.color = pickupColor;
 
             // Auto-despawn
             Destroy(gameObject, despawnTime);
