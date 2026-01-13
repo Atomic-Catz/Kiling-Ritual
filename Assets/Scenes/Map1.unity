@@ -44842,25 +44842,55 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2666185791749128206, guid: 508b7f048b68869459ecbc5da7d833d1,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3343446858023328942, guid: 508b7f048b68869459ecbc5da7d833d1,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3465825214440980773, guid: 508b7f048b68869459ecbc5da7d833d1,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3909031464297897098, guid: 508b7f048b68869459ecbc5da7d833d1,
         type: 3}
       propertyPath: m_Name
       value: Trader
       objectReference: {fileID: 0}
+    - target: {fileID: 5778783115055288894, guid: 508b7f048b68869459ecbc5da7d833d1,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6985876072799685051, guid: 508b7f048b68869459ecbc5da7d833d1,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7404730139321703370, guid: 508b7f048b68869459ecbc5da7d833d1,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7610710610806640781, guid: 508b7f048b68869459ecbc5da7d833d1,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.57
+      value: 3.38
       objectReference: {fileID: 0}
     - target: {fileID: 7610710610806640781, guid: 508b7f048b68869459ecbc5da7d833d1,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.10672927
+      value: 0.69
       objectReference: {fileID: 0}
     - target: {fileID: 7610710610806640781, guid: 508b7f048b68869459ecbc5da7d833d1,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 8.97
+      value: 8.11
       objectReference: {fileID: 0}
     - target: {fileID: 7610710610806640781, guid: 508b7f048b68869459ecbc5da7d833d1,
         type: 3}
@@ -44898,7 +44928,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 7096705683567938150, guid: 508b7f048b68869459ecbc5da7d833d1, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 508b7f048b68869459ecbc5da7d833d1, type: 3}
