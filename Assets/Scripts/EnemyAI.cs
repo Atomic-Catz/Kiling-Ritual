@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using InfimaGames.LowPolyShooterPack;
 using System.Collections.Generic;
+using System.Collections;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyAI : MonoBehaviour
@@ -33,6 +34,13 @@ public class EnemyAI : MonoBehaviour
     private Vector3 walkPoint;
     private bool walkPointSet;
 
+    [Header("Grab Settings")]
+    public float grabRadius = 3f;
+    public int grabCountdownSeconds = 10;
+    [Range(0f, 1f)]
+    public float grabChancePerSecond = 0.2f;
+    public float grabDuration = 3f;
+
     [Header("Layers")]
     public LayerMask isPlayer;
 
@@ -43,6 +51,9 @@ public class EnemyAI : MonoBehaviour
     private bool playerInSight;
     private bool playerInAttack;
     private float lastAttackTime = -999f;
+    private Coroutine grabCountdownCoroutine = null;
+    private Coroutine activeGrabCoroutine = null;
+    private bool isGrabbed = false;
 
     #region UNITY
 
@@ -84,6 +95,26 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
+        if (player != null)
+        {
+            float dist = Vector3.Distance(transform.position, player.position);
+            bool inside = dist <= grabRadius;
+
+            if (inside)
+            {
+                if (grabCountdownCoroutine == null && !isGrabbed)
+                    grabCountdownCoroutine = StartCoroutine(GrabCountdownRoutine());
+            }
+            else
+            {
+                if (grabCountdownCoroutine != null)
+                {
+                    StopCoroutine(grabCountdownCoroutine);
+                    grabCountdownCoroutine = null;
+                }
+            }
+        }
+
         playerInSight = Physics.CheckSphere(transform.position, sightRange, isPlayer);
         playerInAttack = Physics.CheckSphere(transform.position, attackRange, isPlayer);
 
@@ -93,11 +124,27 @@ public class EnemyAI : MonoBehaviour
         }
         else if (playerInSight && !playerInAttack)
         {
-            ChasePlayer();
+            if(!isGrabbed)
+                ChasePlayer();
+            else
+            {
+                agent.ResetPath();
+                agent.isStopped = true;
+                if (animator != null)
+                    animator.SetBool("IsWalking", false);
+            }
         }
         else
         {
-            Patroling();
+            if (!isGrabbed)
+                Patroling();
+            else
+            {
+                agent.ResetPath();
+                agent.isStopped = true;
+                if (animator != null)
+                    animator.SetBool("IsWalking", false);
+            }
         }
     }
 
@@ -246,6 +293,77 @@ public class EnemyAI : MonoBehaviour
         TrySpawnPowerups();
 
         Destroy(gameObject, 5f);
+    }
+
+    #endregion
+
+    #region GRAB LOGIC
+
+    private IEnumerator GrabCountdownRoutine()
+    {
+        int seconds = Mathf.Max(1, grabCountdownSeconds);
+        for (int i = 0; i < seconds; i++)
+        {
+            yield return new WaitForSeconds(1f);
+
+            if (player == null) break;
+            float dist = Vector3.Distance(transform.position, player.position);
+            if (dist > grabRadius) break;
+
+            float roll = Random.value;
+            if (roll <= grabChancePerSecond)
+            {
+                grabCountdownCoroutine = null;
+                if (activeGrabCoroutine != null) StopCoroutine(activeGrabCoroutine);
+                activeGrabCoroutine = StartCoroutine(PerformGrab());
+                yield break;
+            }
+        }
+
+        grabCountdownCoroutine = null;
+    }
+
+    private IEnumerator PerformGrab()
+    {
+        isGrabbed = true;
+
+        if (agent != null)
+        {
+            agent.ResetPath();
+            agent.isStopped = true;
+        }
+        if (animator != null)
+        {
+            animator.SetBool("IsWalking", false);
+            animator.ResetTrigger("IsAttacking");
+        }
+
+        Movement playerMovement = null;
+        Rigidbody playerRb = null;
+        if (player != null)
+        {
+            playerMovement = player.GetComponentInChildren<Movement>();
+            if (playerMovement != null) playerMovement.enabled = false;
+
+            playerRb = player.GetComponentInChildren<Rigidbody>();
+            if (playerRb != null)
+            {
+                playerRb.linearVelocity = Vector3.zero;
+                playerRb.angularVelocity = Vector3.zero;
+            }
+        }
+
+        yield return new WaitForSeconds(Mathf.Max(0.01f, grabDuration));
+
+        isGrabbed = false;
+        if (agent != null)
+        {
+            agent.isStopped = false;
+        }
+
+        if (playerMovement != null) playerMovement.enabled = true;
+
+        activeGrabCoroutine = null;
     }
 
     #endregion
