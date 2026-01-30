@@ -34,7 +34,8 @@ public class EnemyAI : MonoBehaviour
     private Vector3 walkPoint;
     private bool walkPointSet;
 
-    [Header("Grab Settings")]
+    [Header("Grab Settings")] 
+    public bool canGrab = true;
     public float grabRadius = 3f;
     public int grabCountdownSeconds = 10;
     [Range(0f, 1f)]
@@ -95,7 +96,7 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        if (player != null)
+        if (canGrab && player != null)
         {
             float dist = Vector3.Distance(transform.position, player.position);
             bool inside = dist <= grabRadius;
@@ -118,7 +119,7 @@ public class EnemyAI : MonoBehaviour
         playerInSight = Physics.CheckSphere(transform.position, sightRange, isPlayer);
         playerInAttack = Physics.CheckSphere(transform.position, attackRange, isPlayer);
 
-        if (playerInAttack && playerInSight)
+        if (!isGrabbed && playerInAttack && playerInSight)
         {
             AttackPlayer();
         }
@@ -267,6 +268,15 @@ public class EnemyAI : MonoBehaviour
 
     private void DestroyEnemy()
     {
+        
+        if (grabCountdownCoroutine != null)
+            StopCoroutine(grabCountdownCoroutine);
+        
+        if (activeGrabCoroutine != null)
+            StopCoroutine(activeGrabCoroutine);
+        
+        ForceReleaseGrab();
+        
         int multiplier = 1;
 
         var triple = FindObjectOfType<TripleScoreBuff>();
@@ -299,22 +309,55 @@ public class EnemyAI : MonoBehaviour
 
     #region GRAB LOGIC
 
+    private void ForceReleaseGrab()
+    {
+        isGrabbed = false;
+
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
+        {
+            agent.isStopped = false;
+        }
+
+        if (player != null)
+        {
+            var movement = player.GetComponentInChildren<Movement>();
+            if (movement != null)
+                movement.enabled = true;
+        }
+
+        activeGrabCoroutine = null;
+        grabCountdownCoroutine = null;
+    }
+
+    
     private IEnumerator GrabCountdownRoutine()
     {
+        
+        if (!canGrab)
+            yield break;
+        
         int seconds = Mathf.Max(1, grabCountdownSeconds);
         for (int i = 0; i < seconds; i++)
         {
             yield return new WaitForSeconds(1f);
 
-            if (player == null) break;
+            if (player == null)
+                break;
             float dist = Vector3.Distance(transform.position, player.position);
-            if (dist > grabRadius) break;
+            if (dist > grabRadius) 
+                break;
 
             float roll = Random.value;
             if (roll <= grabChancePerSecond)
             {
                 grabCountdownCoroutine = null;
-                if (activeGrabCoroutine != null) StopCoroutine(activeGrabCoroutine);
+                
+                if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+                    yield break;
+                
+                if (activeGrabCoroutine != null)
+                    StopCoroutine(activeGrabCoroutine);
+                
                 activeGrabCoroutine = StartCoroutine(PerformGrab());
                 yield break;
             }
@@ -325,12 +368,23 @@ public class EnemyAI : MonoBehaviour
 
     private IEnumerator PerformGrab()
     {
+        
+        if (!canGrab)
+            yield break;
+        
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+            yield break;
+        
         isGrabbed = true;
 
-        if (agent != null)
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
         {
             agent.ResetPath();
             agent.isStopped = true;
+        }
+        else
+        {
+            yield break;
         }
         if (animator != null)
         {
@@ -355,15 +409,15 @@ public class EnemyAI : MonoBehaviour
 
         yield return new WaitForSeconds(Mathf.Max(0.01f, grabDuration));
 
-        isGrabbed = false;
-        if (agent != null)
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh)
         {
-            agent.isStopped = false;
+            ForceReleaseGrab();
+            yield break;
         }
-
-        if (playerMovement != null) playerMovement.enabled = true;
-
-        activeGrabCoroutine = null;
+        
+        isGrabbed = false;
+        
+        ForceReleaseGrab();
     }
 
     #endregion

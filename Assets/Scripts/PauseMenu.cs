@@ -6,6 +6,8 @@ public class PauseMenu : MonoBehaviour
 {
     public static bool GameIsPaused = false;
 
+    public static bool IsPlayerDead = false;
+    
     [Header("UI")]
     public GameObject pauseMenuUI;
 
@@ -13,6 +15,8 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
+        if (IsPlayerDead) return;
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (GameIsPaused)
@@ -21,6 +25,7 @@ public class PauseMenu : MonoBehaviour
                 Pause();
         }
     }
+
 
     public void Resume()
     {

@@ -12,6 +12,9 @@ namespace InfimaGames.LowPolyShooterPack
     {
         #region FIELDS SERIALIZED
 
+        [Header("Death")]
+        [SerializeField] private GameObject deathScreen;
+        
         [Header("Healing Settings")]
         [SerializeField] private float healAmount = 30f;         
         [SerializeField] private float healCooldown = 5f;        
@@ -100,18 +103,52 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region UNITY
 
+        private void HandleDeath()
+        {
+            Debug.Log("[Character] HandleDeath called");
+
+            // Disable player logic
+            enabled = false;
+            if (characterKinematics != null)
+                characterKinematics.enabled = false;
+
+            // Show death UI
+            if (deathScreen != null)
+                deathScreen.SetActive(true);
+            else
+                Debug.LogError("Death Screen is NOT assigned!");
+
+            // Cursor
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            // Pause
+            //Time.timeScale = 0f;
+        }
+        
         protected override void Awake()
         {
+            base.Awake();
+
             cursorLocked = true;
             UpdateCursorState();
 
             characterKinematics = GetComponent<CharacterKinematics>();
-
             characterHealth = GetComponent<CharacterHealth>();
-            
+
+            if (characterHealth != null)
+                characterHealth.OnDeath += HandleDeath;
+
             inventory.Init();
             RefreshWeaponSetup();
         }
+
+        private void OnDestroy()
+        {
+            if (characterHealth != null)
+                characterHealth.OnDeath -= HandleDeath;
+        }
+
 
         protected override void Start()
         {
