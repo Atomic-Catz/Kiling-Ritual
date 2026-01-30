@@ -9,6 +9,7 @@ namespace InfimaGames.LowPolyShooterPack
         [SerializeField] private float maxHealth = 100f;
         private float currentHealth;
 
+        public event Action OnDeath;
         private bool isDead = false;
 
         public event Action<float, float> OnHealthChanged;
@@ -51,6 +52,18 @@ namespace InfimaGames.LowPolyShooterPack
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
         }
 
+        private void Start()
+        {
+            var health = GetComponent<CharacterHealth>();
+            if (health != null)
+                health.OnDeath += HandleDeath;
+        }
+
+        private void HandleDeath()
+        {
+            FindObjectOfType<DeathMenu>()?.Show();
+        }
+
 
         public float GetCurrentHealth() => currentHealth;
         public float GetMaxHealth() => maxHealth;
@@ -59,6 +72,10 @@ namespace InfimaGames.LowPolyShooterPack
         {
             if (isDead) return; // Prevent multiple calls
             isDead = true;
+
+            Debug.Log("[CharacterHealth] Character died!");
+
+            OnDeath?.Invoke();
         }
     }
 }

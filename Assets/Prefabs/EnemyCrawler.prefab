@@ -1509,6 +1509,11 @@ MonoBehaviour:
   walkSpeed: 2
   chaseSpeed: 4
   walkPointRange: 10
+  canGrab: 0
+  grabRadius: 3
+  grabCountdownSeconds: 10
+  grabChancePerSecond: 0.2
+  grabDuration: 3
   isPlayer:
     serializedVersion: 2
     m_Bits: 1024

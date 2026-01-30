@@ -3,6 +3,11 @@ using UnityEngine;
 
 public class WaveManager : MonoBehaviour
 {
+    [Header("Trader Settings")]
+    public GameObject traderPrefab;
+    public Transform traderSpawnPoint;
+    private GameObject activeTrader;
+    
     [Header("Spawners")]
     public EnemySpawner[] spawners;  // Assign all spawners in the scene
 
@@ -57,8 +62,39 @@ public class WaveManager : MonoBehaviour
 
             Debug.Log($"Wave {currentWave} completed. Break for {breakDuration} seconds.");
 
-            // Wait for break before next wave
+            // Spawn trader
+            SpawnTrader();
+
+            // Break time
             yield return new WaitForSeconds(breakDuration);
+
+            // Remove trader before next wave
+            DespawnTrader();
+
+        }
+    }
+    
+    private void SpawnTrader()
+    {
+        if (traderPrefab == null || traderSpawnPoint == null)
+            return;
+
+        if (activeTrader != null)
+            return;
+
+        activeTrader = Instantiate(
+            traderPrefab,
+            traderSpawnPoint.position,
+            traderSpawnPoint.rotation
+        );
+    }
+
+    private void DespawnTrader()
+    {
+        if (activeTrader != null)
+        {
+            Destroy(activeTrader);
+            activeTrader = null;
         }
     }
 }
