@@ -94,6 +94,7 @@ MonoBehaviour:
   reloadDuration: 1.5
   ammoApplyTime: 0.6
   reserveAmmunition: 90
+  reserveAmmunitionMax: 90
   autoReloadOnEmpty: 1
   allowReloadInterrupt: 1
 --- !u!114 &6110289550021268199

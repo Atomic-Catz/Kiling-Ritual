@@ -599,6 +599,37 @@ Transform:
   - {fileID: 4868880291133846811}
   m_Father: {fileID: 8031620325558638845}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1879927530447456014
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5595641921196510567}
+  m_Layer: 0
+  m_Name: ProjectileSpawn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5595641921196510567
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1879927530447456014}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.776, y: 1.339, z: 1.235}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 572013476530204721}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1913804136465561999
 GameObject:
   m_ObjectHideFlags: 0
@@ -1095,17 +1126,18 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 572013476530204721}
+  - component: {fileID: -1505674490465444499}
   - component: {fileID: 7039904507795025395}
   - component: {fileID: -4163171885054842003}
   - component: {fileID: -3115477091576229706}
-  - component: {fileID: -1505674490465444499}
+  - component: {fileID: 6263743720616968926}
   m_Layer: 0
-  m_Name: 'Comander type '
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Name: EnemyCommander
+  m_TagString: Enemy
+  m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &572013476530204721
 Transform:
   m_ObjectHideFlags: 0
@@ -1126,9 +1158,32 @@ Transform:
   - {fileID: 6770382542584323802}
   - {fileID: 7893961585509033657}
   - {fileID: 2455054863547626147}
-  - {fileID: 6215271148548846587}
+  - {fileID: 5595641921196510567}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &-1505674490465444499
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2527979015679933737}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 3
+  m_Direction: 1
+  m_Center: {x: 0, y: 1.2, z: 0}
 --- !u!95 &7039904507795025395
 Animator:
   serializedVersion: 7
@@ -1162,7 +1217,7 @@ NavMeshAgent:
   m_AgentTypeID: 0
   m_Radius: 0.5
   m_Speed: 3.5
-  m_Acceleration: 8
+  m_Acceleration: 25
   avoidancePriority: 50
   m_AngularSpeed: 120
   m_StoppingDistance: 0
@@ -1191,48 +1246,38 @@ MonoBehaviour:
   buffRadius: 500
   buffMultiplier: 1.5
   buffUpdateInterval: 0.5
-  desiredDistance: 12
+  desiredDistance: 15
   maxDistance: 18
-  moveSpeed: 3.5
-  stopDistanceThreshold: 0.5
-  health: 200
-  pointsOnDeath: 50
+  moveSpeed: 6
+  strafeIntensity: 20
+  strafeSpeed: 5
+  health: 1000
+  pointsOnDeath: 250
   powerupDrops: []
   powerupDropChance: 10
   projectilePrefab: {fileID: 8029799744240735326, guid: 966e70ca08c5080499920a112a67edb8,
     type: 3}
-  projectileSpawn: {fileID: 0}
+  projectileSpawn: {fileID: 5595641921196510567}
   projectileSpeed: 25
   projectileDamage: 20
   fireRange: 25
-  fireRate: 1
+  fireRate: 1.2
   losMask:
     serializedVersion: 2
     m_Bits: 4294967295
   updateRate: 0.1
---- !u!136 &-1505674490465444499
-CapsuleCollider:
+--- !u!114 &6263743720616968926
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2527979015679933737}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1
-  m_Direction: 2
-  m_Center: {x: 0, y: 0, z: 0}
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1617aeab54b916a429d39e00cfc9af23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RagdollController
 --- !u!1 &2576320477399654197
 GameObject:
   m_ObjectHideFlags: 0
@@ -3083,37 +3128,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6467600362336080613}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7719412861174392528
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6215271148548846587}
-  m_Layer: 0
-  m_Name: ProjectileSpawn
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6215271148548846587
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7719412861174392528}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.802, y: 1.286, z: 1.174}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 572013476530204721}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8027739800440627670
 GameObject:

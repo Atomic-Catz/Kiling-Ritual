@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class WaveManager : MonoBehaviour
@@ -9,20 +10,20 @@ public class WaveManager : MonoBehaviour
     private GameObject activeTrader;
     
     [Header("Spawners")]
-    public EnemySpawner[] spawners;  // Assign all spawners in the scene
+    public EnemySpawner[] spawners;
 
-    [Header("Wave Settings")]
-    public float breakDuration = 10f; // Time between waves
+    [Header("Zombies Scaling (CoD Style)")]
+    public float breakDuration = 15f; 
+    public int baseEnemyCount = 6;      // Starting enemies at Wave 1
+    public float countMultiplier = 1.15f; // +15% enemies per wave
+    public float healthMultiplier = 1.1f; // +10% health per wave (until cap)
 
     private int currentWave = 0;
 
     private void Awake()
     {
-        // Auto-find spawners if none assigned
         if (spawners == null || spawners.Length == 0)
-        {
             spawners = FindObjectsOfType<EnemySpawner>();
-        }
     }
 
     private void Start()
@@ -35,66 +36,49 @@ public class WaveManager : MonoBehaviour
         while (true)
         {
             currentWave++;
-            Debug.Log($"Wave {currentWave} started.");
+            
+            // MATH: Quantity and Health scaling
+            int totalEnemiesForWave = Mathf.RoundToInt(baseEnemyCount * Mathf.Pow(countMultiplier, currentWave - 1)) + (currentWave * 2);
+            float currentHealthBoost = Mathf.Pow(healthMultiplier, Mathf.Min(currentWave, 20) - 1); // Health caps scaling at Wave 20
 
-            // Start wave on all valid spawners
+            Debug.Log($"<color=red>Wave {currentWave} Started!</color> Enemies: {totalEnemiesForWave}, HP Boost: {currentHealthBoost:F2}x");
+
+            // Distribute total count among all spawners
+            int enemiesPerSpawner = totalEnemiesForWave / spawners.Length;
             foreach (var spawner in spawners)
             {
                 if (spawner != null)
-                    spawner.StartWave();
+                    spawner.StartWave(enemiesPerSpawner, currentHealthBoost);
             }
 
-            // Wait until all spawners have no active enemies
+            // Wait until all spawners report 0 active enemies AND 0 enemies left to spawn
             bool allClear = false;
             while (!allClear)
             {
                 allClear = true;
                 foreach (var spawner in spawners)
                 {
-                    if (spawner != null && spawner.HasActiveEnemies)
+                    if (spawner != null && (spawner.HasActiveEnemies || spawner.IsSpawning))
                     {
                         allClear = false;
                         break;
                     }
                 }
-                yield return null;
+                yield return new WaitForSeconds(1.0f);
             }
 
-            Debug.Log($"Wave {currentWave} completed. Break for {breakDuration} seconds.");
-
-            // Spawn trader
+            Debug.Log($"Wave {currentWave} Clear. Break Time!");
             SpawnTrader();
-
-            // Break time
             yield return new WaitForSeconds(breakDuration);
-
-            // Remove trader before next wave
             DespawnTrader();
-
         }
     }
     
     private void SpawnTrader()
     {
-        if (traderPrefab == null || traderSpawnPoint == null)
-            return;
-
-        if (activeTrader != null)
-            return;
-
-        activeTrader = Instantiate(
-            traderPrefab,
-            traderSpawnPoint.position,
-            traderSpawnPoint.rotation
-        );
+        if (traderPrefab && traderSpawnPoint && !activeTrader)
+            activeTrader = Instantiate(traderPrefab, traderSpawnPoint.position, traderSpawnPoint.rotation);
     }
 
-    private void DespawnTrader()
-    {
-        if (activeTrader != null)
-        {
-            Destroy(activeTrader);
-            activeTrader = null;
-        }
-    }
+    private void DespawnTrader() { if (activeTrader) { Destroy(activeTrader); activeTrader = null; } }
 }
