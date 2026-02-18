@@ -12,59 +12,44 @@ public class CommanderAI : MonoBehaviour
     public Animator animator;
 
     [Header("Buff (aura)")]
-    [Tooltip("Radius in world units where the commander buffs other enemies.")]
     public float buffRadius = 10f;
-    [Tooltip("Multiplier applied to other enemies' meleeDamage (1.5 = +50%).")]
     [Range(1f, 4f)]
     public float buffMultiplier = 1.5f;
-    [Tooltip("How often (seconds) we update the buff list.")]
     public float buffUpdateInterval = 0.5f;
 
-    [Header("Kiting / Movement")]
-    [Tooltip("Target distance commander tries to keep from player.")]
+    [Header("Tactical Movement")]
     public float desiredDistance = 12f;
-    [Tooltip("If the commander gets farther than this from player, it will stop moving away and idle.")]
     public float maxDistance = 18f;
-    [Tooltip("How fast the commander moves (NavMeshAgent.speed).")]
     public float moveSpeed = 3.5f;
-    [Tooltip("How close commander must be to a computed 'away' point to consider we've reached it.")]
-    public float stopDistanceThreshold = 0.5f;
+    [Tooltip("How much he weaves left/right while moving.")]
+    public float strafeIntensity = 5f;
+    [Tooltip("How fast he weaves.")]
+    public float strafeSpeed = 2f;
 
     [Header("Health & Death")]
     public float health = 10f;
     public int pointsOnDeath = 50;
 
-    [Header("Powerup Drop (Commander)")]
-    [Tooltip("Optional prefab(s) to spawn when the commander dies.")]
+    [Header("Powerup Drop")]
     public List<GameObject> powerupDrops = new List<GameObject>();
-    [Tooltip("Chance (0-100) to drop one selected powerup from the list.")]
     [Range(0f, 100f)]
     public float powerupDropChance = 10f;
 
-
     [Header("Ranged Attack")]
-    [Tooltip("Prefab of projectile to spawn (should contain SimpleProjectile or similar).")]
     public GameObject projectilePrefab;
-    [Tooltip("Where the projectile spawns (assign a child transform).")]
     public Transform projectileSpawn;
-    [Tooltip("Projectile speed (applied to its Rigidbody or movement).")]
     public float projectileSpeed = 25f;
-    [Tooltip("Damage dealt by projectile (integer).")]
     public int projectileDamage = 20;
-    [Tooltip("Max distance at which commander will try to fire.")]
     public float fireRange = 25f;
-    [Tooltip("Shots per second.")]
     public float fireRate = 1.0f;
-    [Tooltip("Optional: layer mask for line-of-sight checks (so commander won't shoot through walls).")]
     public LayerMask losMask = ~0;
 
     [Header("Misc")]
     public float updateRate = 0.1f;
 
     private float lastFireTime = -999f;
-
+    private float strafeTimer;
     private Dictionary<EnemyAI, int> buffedOriginals = new Dictionary<EnemyAI, int>();
-
     private Coroutine buffCoroutine;
     private Coroutine aiCoroutine;
 
@@ -82,6 +67,8 @@ public class CommanderAI : MonoBehaviour
         if (agent != null)
         {
             agent.speed = moveSpeed;
+            // IMPORTANT: We handle rotation manually so he can face player while moving backward
+            agent.updateRotation = false; 
         }
     }
 
@@ -98,10 +85,7 @@ public class CommanderAI : MonoBehaviour
         RevertAllBuffs();
     }
 
-    private void OnDestroy()
-    {
-        RevertAllBuffs();
-    }
+    private void OnDestroy() { RevertAllBuffs(); }
 
     private IEnumerator AIUpdateRoutine()
     {
@@ -125,221 +109,168 @@ public class CommanderAI : MonoBehaviour
 
     private void TickAI()
     {
+        if (agent == null || !agent.isActiveAndEnabled || !agent.isOnNavMesh) return;
         if (player == null) return;
 
         float dist = Vector3.Distance(transform.position, player.position);
+        strafeTimer += Time.deltaTime;
 
+        // 1. ALWAYS FACE THE PLAYER
+        RotateTowardsPlayer();
+
+        // 2. TACTICAL MANEUVERING
         if (dist < desiredDistance)
         {
-            Vector3 dir = (transform.position - player.position).normalized;
-            if (dir.sqrMagnitude < 0.001f) dir = transform.forward;
-            Vector3 target = player.position + dir * desiredDistance;
-
-            if (NavMesh.SamplePosition(target, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-            {
-                agent.isStopped = false;
-                agent.SetDestination(hit.position);
-            }
-            else
-            {
-                Vector3 fallback = transform.position + dir * desiredDistance;
-                agent.isStopped = false;
-                agent.SetDestination(fallback);
-            }
+            // RETREAT & WEAVE
+            Vector3 awayDir = (transform.position - player.position).normalized;
+            Vector3 sideDir = Vector3.Cross(awayDir, Vector3.up);
+            float weave = Mathf.Sin(strafeTimer * strafeSpeed) * strafeIntensity;
+            
+            Vector3 targetPos = player.position + (awayDir * desiredDistance) + (sideDir * weave);
+            MoveToPoint(targetPos);
+        }
+        else if (dist > maxDistance)
+        {
+            // APPROACH
+            MoveToPoint(player.position);
         }
         else
         {
-            if (dist > maxDistance)
+            // COMBAT JIGGLE (Stays in range but shuffles to be a harder target)
+            if (Mathf.Repeat(strafeTimer, 1.5f) > 1.2f)
             {
-                Vector3 dirToPlayer = (player.position - transform.position).normalized;
-                Vector3 newTarget = player.position - dirToPlayer * Mathf.Clamp(desiredDistance, 2f, maxDistance);
-                if (NavMesh.SamplePosition(newTarget, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-                {
-                    agent.isStopped = false;
-                    agent.SetDestination(hit.position);
-                }
+                Vector3 jigglePos = transform.position + (transform.right * Random.Range(-2f, 2f));
+                MoveToPoint(jigglePos);
             }
             else
             {
-                agent.ResetPath();
                 agent.isStopped = true;
             }
         }
 
+        // 3. SHOOTING LOGIC
+        HandleAttackLogic(dist);
+    }
+
+    private void RotateTowardsPlayer()
+    {
+        Vector3 dir = (player.position - transform.position).normalized;
+        dir.y = 0;
+        if (dir.sqrMagnitude > 0.001f)
+        {
+            Quaternion lookRot = Quaternion.LookRotation(dir);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, Time.deltaTime * 10f);
+        }
+    }
+
+    private void MoveToPoint(Vector3 point)
+    {
+        if (NavMesh.SamplePosition(point, out NavMeshHit hit, 3f, NavMesh.AllAreas))
+        {
+            agent.isStopped = false;
+            agent.SetDestination(hit.position);
+        }
+    }
+
+    private void HandleAttackLogic(float dist)
+    {
         if (dist <= fireRange)
         {
-            Vector3 origin = (projectileSpawn != null) ? projectileSpawn.position : transform.position + Vector3.up * 1.0f;
+            Vector3 origin = (projectileSpawn != null) ? projectileSpawn.position : transform.position + Vector3.up * 1.5f;
             Vector3 dirToPlayer = (player.position + Vector3.up * 0.8f) - origin;
-            float distToPlayer = dirToPlayer.magnitude;
-            Ray ray = new Ray(origin, dirToPlayer.normalized);
-            if (Physics.Raycast(ray, out RaycastHit hitInfo, distToPlayer, losMask))
+            
+            if (Physics.Raycast(origin, dirToPlayer.normalized, out RaycastHit hit, dist, losMask))
             {
-                if (hitInfo.transform == player || hitInfo.transform.IsChildOf(player))
+                if (hit.transform == player || hit.transform.IsChildOf(player))
                     TryFireAtPlayer(origin, dirToPlayer.normalized);
             }
-            else
-                TryFireAtPlayer(origin, dirToPlayer.normalized);
         }
     }
 
     private void TryFireAtPlayer(Vector3 origin, Vector3 dir)
     {
         if (Time.time - lastFireTime < (1f / Mathf.Max(0.0001f, fireRate))) return;
-
         lastFireTime = Time.time;
 
-        if (projectilePrefab == null || projectileSpawn == null)
-            return;
+        if (projectilePrefab == null || projectileSpawn == null) return;
 
         GameObject proj = Instantiate(projectilePrefab, projectileSpawn.position, Quaternion.LookRotation(dir));
-        var sp = proj.GetComponent<SimpleProjectile>();
-        if (sp != null)
-        {
-            sp.damage = projectileDamage;
-            sp.speed = projectileSpeed;
-            sp.owner = gameObject;
-        }
-        else
-        {
-            Rigidbody rb = proj.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.linearVelocity = dir * projectileSpeed;
-            }
-        }
+        var rb = proj.GetComponent<Rigidbody>();
+        if (rb != null) rb.linearVelocity = dir * projectileSpeed;
 
-        if (animator != null)
-        {
-            animator.ResetTrigger("IsAttacking");
-            animator.SetTrigger("IsAttacking");
-        }
+        if (animator != null) animator.SetTrigger("IsAttacking");
     }
 
     private void UpdateBuffAura()
     {
         var allEnemies = FindObjectsOfType<EnemyAI>();
         HashSet<EnemyAI> inRange = new HashSet<EnemyAI>();
-        for (int i = 0; i < allEnemies.Length; i++)
+        
+        foreach (var e in allEnemies)
         {
-            var e = allEnemies[i];
-            if (e == null) continue;
-            if (e.gameObject == this.gameObject) continue;
-            if (e.health <= 0f) continue;
-
-            float d = Vector3.Distance(transform.position, e.transform.position);
-            if (d <= buffRadius)
+            if (e == null || e.gameObject == gameObject || e.health <= 0f) continue;
+            if (Vector3.Distance(transform.position, e.transform.position) <= buffRadius)
                 inRange.Add(e);
         }
 
-        var reverted = new List<EnemyAI>();
+        List<EnemyAI> toRemove = new List<EnemyAI>();
         foreach (var kv in buffedOriginals)
         {
-            var enemy = kv.Key;
-            if (enemy == null || !inRange.Contains(enemy))
+            if (kv.Key == null || !inRange.Contains(kv.Key))
             {
-                if (enemy != null)
-                    enemy.meleeDamage = kv.Value;
-                reverted.Add(enemy);
+                if (kv.Key != null) kv.Key.meleeDamage = kv.Value;
+                toRemove.Add(kv.Key);
             }
         }
+        foreach (var r in toRemove) buffedOriginals.Remove(r);
 
-        foreach (var rem in reverted)
-            buffedOriginals.Remove(rem);
-
-        foreach (var enemy in inRange)
+        foreach (var e in inRange)
         {
-            if (enemy == null) continue;
-            if (enemy == this) continue;
-            if (buffedOriginals.ContainsKey(enemy)) continue;
-
-            int original = enemy.meleeDamage;
-            buffedOriginals[enemy] = original;
-            int newDamage = Mathf.CeilToInt(original * buffMultiplier);
-            enemy.meleeDamage = newDamage;
+            if (buffedOriginals.ContainsKey(e)) continue;
+            buffedOriginals[e] = e.meleeDamage;
+            e.meleeDamage = Mathf.CeilToInt(e.meleeDamage * buffMultiplier);
         }
     }
 
     private void RevertAllBuffs()
     {
         foreach (var kv in buffedOriginals)
-        {
-            var enemy = kv.Key;
-            if (enemy != null)
-                enemy.meleeDamage = kv.Value;
-        }
+            if (kv.Key != null) kv.Key.meleeDamage = kv.Value;
         buffedOriginals.Clear();
     }
 
-    public void TakeDamage(int damage)
-    {
-        ApplyDamage((float)damage);
-    }
-
-    public void TakeDamage(float damage)
-    {
-        ApplyDamage(damage);
-    }
-
-    private void ApplyDamage(float amount)
+    public void TakeDamage(float amount)
     {
         if (amount <= 0f) return;
         health -= amount;
-
-        Debug.Log($"{name} took {amount} damage. Remaining health: {health}");
-
-        if (health <= 0f)
-            Die();
+        if (health <= 0f) Die();
     }
 
     private void Die()
     {
         if (health > 0f) health = 0f;
-
+        
+        // Report death to Wave Spawner instantly
+        GetComponent<SpawnerEnemy>()?.ReportDeath();
+        
         RevertAllBuffs();
-
-        if (ScoreManager.Instance != null)
-            ScoreManager.Instance.AddPoints(0, pointsOnDeath);
+        if (ScoreManager.Instance != null) ScoreManager.Instance.AddPoints(0, pointsOnDeath);
 
         if (agent != null) agent.enabled = false;
         if (animator != null) animator.enabled = false;
 
-        var rootCollider = GetComponent<Collider>();
-        if (rootCollider != null) rootCollider.enabled = false;
-
         var ragdoll = GetComponent<RagdollController>();
-        if (ragdoll != null)
-            ragdoll.SetRagdoll(true);
+        if (ragdoll != null) ragdoll.SetRagdoll(true);
 
         gameObject.layer = LayerMask.NameToLayer("DeadEnemy");
-        foreach (Transform child in transform)
-            child.gameObject.layer = LayerMask.NameToLayer("DeadEnemy");
-
-        TrySpawnPowerups();
-
         Destroy(gameObject, 5f);
-    }
-
-    private void TrySpawnPowerups()
-    {
-        if (powerupDrops == null || powerupDrops.Count == 0) return;
-
-        var drop = powerupDrops[Random.Range(0, powerupDrops.Count)];
-        if (drop == null) return;
-
-        float roll = Random.Range(0f, 100f);
-        if (roll <= powerupDropChance)
-            Instantiate(drop, transform.position + Vector3.up, Quaternion.identity);
     }
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = new Color(1f, 0.5f, 0.1f, 0.2f);
-        Gizmos.DrawSphere(transform.position, buffRadius);
-
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, buffRadius);
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, desiredDistance);
-
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, fireRange);
     }
 }

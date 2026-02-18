@@ -28,7 +28,10 @@ public class Projectile : MonoBehaviour
     {
         // Ignore collisions with player
         var gameModeService = ServiceLocator.Current.Get<IGameModeService>();
-        Physics.IgnoreCollision(gameModeService.GetPlayerCharacter().GetComponent<Collider>(), GetComponent<Collider>());
+        if (gameModeService != null && gameModeService.GetPlayerCharacter() != null)
+        {
+            Physics.IgnoreCollision(gameModeService.GetPlayerCharacter().GetComponent<Collider>(), GetComponent<Collider>());
+        }
 
         StartCoroutine(DestroyAfterTimer());
     }
@@ -39,33 +42,54 @@ public class Projectile : MonoBehaviour
         if (collision.gameObject.GetComponent<Projectile>() != null)
             return;
 
+        // Try to get either script
         EnemyAI enemy = collision.gameObject.GetComponent<EnemyAI>();
+        CommanderAI commander = collision.gameObject.GetComponent<CommanderAI>();
+
         if (enemy != null)
         {
-            // Apply Insta-Kill if projectile marked
+            // Damage the basic enemy
             enemy.TakeDamage(instaKill ? 999999 : damage);
-
-            // Spawn blood effect
-            if (bloodImpactPrefabs.Length > 0)
-            {
-                Instantiate(
-                    bloodImpactPrefabs[Random.Range(0, bloodImpactPrefabs.Length)],
-                    transform.position,
-                    Quaternion.LookRotation(collision.contacts[0].normal)
-                );
-            }
-
-            Destroy(gameObject);
+            
+            // Shared effects
+            ExecuteEnemyHit(collision);
+            return;
+        }
+        else if (commander != null)
+        {
+            // Damage the commander (using float for his overloaded method)
+            commander.TakeDamage(instaKill ? 999999f : (float)damage);
+            
+            // Shared effects
+            ExecuteEnemyHit(collision);
             return;
         }
 
-        // Handle surface impacts
+        // --- If we reach here, we didn't hit an enemy ---
+
         if (!destroyOnImpact)
             StartCoroutine(DestroyTimer());
         else
             Destroy(gameObject);
 
         HandleSurfaceEffects(collision);
+    }
+
+    /// <summary>
+    /// Handles the visual blood effect and destroys the bullet.
+    /// Used for both Basic Enemies and Commanders.
+    /// </summary>
+    private void ExecuteEnemyHit(Collision collision)
+    {
+        if (bloodImpactPrefabs.Length > 0)
+        {
+            Instantiate(
+                bloodImpactPrefabs[Random.Range(0, bloodImpactPrefabs.Length)],
+                transform.position,
+                Quaternion.LookRotation(collision.contacts[0].normal)
+            );
+        }
+        Destroy(gameObject);
     }
 
     private void HandleSurfaceEffects(Collision collision)
@@ -82,17 +106,20 @@ public class Projectile : MonoBehaviour
             SpawnImpact(concreteImpactPrefabs, collision);
         else if (tag == "Target")
         {
-            collision.transform.gameObject.GetComponent<TargetScript>().isHit = true;
+            var target = collision.transform.gameObject.GetComponent<TargetScript>();
+            if(target != null) target.isHit = true;
             Destroy(gameObject);
         }
         else if (tag == "ExplosiveBarrel")
         {
-            collision.transform.gameObject.GetComponent<ExplosiveBarrelScript>().explode = true;
+            var barrel = collision.transform.gameObject.GetComponent<ExplosiveBarrelScript>();
+            if(barrel != null) barrel.explode = true;
             Destroy(gameObject);
         }
         else if (tag == "GasTank")
         {
-            collision.transform.gameObject.GetComponent<GasTankScript>().isHit = true;
+            var tank = collision.transform.gameObject.GetComponent<GasTankScript>();
+            if(tank != null) tank.isHit = true;
             Destroy(gameObject);
         }
     }
@@ -112,12 +139,12 @@ public class Projectile : MonoBehaviour
     private IEnumerator DestroyTimer()
     {
         yield return new WaitForSeconds(Random.Range(minDestroyTime, maxDestroyTime));
-        Destroy(gameObject);
+        if(gameObject != null) Destroy(gameObject);
     }
 
     private IEnumerator DestroyAfterTimer()
     {
         yield return new WaitForSeconds(destroyAfter);
-        Destroy(gameObject);
+        if(gameObject != null) Destroy(gameObject);
     }
 }
