@@ -8563,13 +8563,18 @@ MonoBehaviour:
   animator: {fileID: 0}
   health: 100
   meleeDamage: 10
-  pointsOnDeath: 15
+  pointsOnDeath: 25
   attackRange: 1
   sightRange: 200
   attackCooldown: 1.5
   walkSpeed: 2
   chaseSpeed: 2.5
   walkPointRange: 10
+  canGrab: 1
+  grabRadius: 3
+  grabCountdownSeconds: 10
+  grabChancePerSecond: 0.2
+  grabDuration: 3
   isPlayer:
     serializedVersion: 2
     m_Bits: 1024

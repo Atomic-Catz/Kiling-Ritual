@@ -12,6 +12,14 @@ namespace InfimaGames.LowPolyShooterPack
     {
         #region FIELDS SERIALIZED
 
+        [Header("Trader Settings")]
+        [Tooltip("If true, the player can cycle to this weapon. Set this to true for starting weapon!")]
+        public string weaponName = "New Weapon";
+        public bool isPurchased = false;
+
+        [Tooltip("The cost of the weapon.")] 
+        public int weaponPrice = 1000;
+
         [Header("Firing")]
 
         [Tooltip("Is this weapon automatic? If yes, then holding down the firing button will continuously fire.")]
@@ -163,16 +171,24 @@ namespace InfimaGames.LowPolyShooterPack
 
         protected override void Awake()
         {
-            //Get Animator.
+            // 1. Core References
             animator = GetComponent<Animator>();
-            //Get Attachment Manager.
             attachmentManager = GetComponent<WeaponAttachmentManagerBehaviour>();
 
-            //Cache the game mode service. We only need this right here, but we'll cache it in case we ever need it again.
+            // 2. IMMEDIATE ATTACHMENT SETUP
+            // This prevents the UI from hitting a Null Magazine
+            if (attachmentManager != null)
+            {
+                magazineBehaviour = attachmentManager.GetEquippedMagazine();
+                muzzleBehaviour = attachmentManager.GetEquippedMuzzle();
+        
+                if (magazineBehaviour != null)
+                    ammunitionCurrent = magazineBehaviour.GetAmmunitionTotal();
+            }
+
+            // 3. Service Locators
             gameModeService = ServiceLocator.Current.Get<IGameModeService>();
-            //Cache the player character.
             characterBehaviour = gameModeService.GetPlayerCharacter();
-            //Cache the world camera. We use this in line traces.
             playerCamera = characterBehaviour.GetCameraWorld().transform;
         }
         protected override void Start()

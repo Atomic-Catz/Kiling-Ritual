@@ -20,16 +20,42 @@ public class EnemySpawner : MonoBehaviour
     public bool HasActiveEnemies => activeEnemies.Count > 0;
     public bool IsSpawning => isSpawning;
 
-    public void StartWave(int count, float hpMultiplier)
+    /// <summary>
+    /// Starts the wave. Now accepts an optional bossPrefab from the WaveManager.
+    /// </summary>
+    public void StartWave(int count, float hpMultiplier, GameObject bossPrefab = null)
     {
-        StartCoroutine(SpawnWaveRoutine(count, hpMultiplier));
+        StartCoroutine(SpawnWaveRoutine(count, hpMultiplier, bossPrefab));
     }
 
-    private IEnumerator SpawnWaveRoutine(int totalToSpawn, float hpMultiplier)
+    private IEnumerator SpawnWaveRoutine(int totalToSpawn, float hpMultiplier, GameObject bossPrefab)
     {
         isSpawning = true;
-        int spawnedThisWave = 0;
 
+        // 1. BOSS SPAWNING (Occurs at the start of the wave if provided)
+        if (bossPrefab != null)
+        {
+            Vector3 bossPos = GetRandomNavMeshPoint(transform.position, spawnRadius);
+            if (bossPos != Vector3.zero)
+            {
+                GameObject boss = Instantiate(bossPrefab, bossPos, Quaternion.identity);
+                
+                // Apply the wave's health scaling to the boss
+                ApplyScaling(boss, hpMultiplier);
+
+                activeEnemies.Add(boss);
+
+                // Attach tracker so WaveManager knows when the Boss is dead
+                SpawnerEnemy tracker = boss.GetComponent<SpawnerEnemy>() ?? boss.AddComponent<SpawnerEnemy>();
+                tracker.OnEnemyDestroyed += () => 
+                { 
+                    activeEnemies.Remove(boss); 
+                };
+            }
+        }
+
+        // 2. REGULAR ENEMY SPAWNING
+        int spawnedThisWave = 0;
         while (spawnedThisWave < totalToSpawn)
         {
             // Only spawn if we are under the map capacity
@@ -63,9 +89,11 @@ public class EnemySpawner : MonoBehaviour
 
     private void ApplyScaling(GameObject enemy, float hpMult)
     {
+        // Adjust health for standard enemies
         var ai = enemy.GetComponent<EnemyAI>();
         if (ai != null) ai.health *= hpMult;
 
+        // Adjust health for the Boss (Commander)
         var cmd = enemy.GetComponent<CommanderAI>();
         if (cmd != null) cmd.health *= hpMult;
     }
@@ -83,7 +111,6 @@ public class EnemySpawner : MonoBehaviour
 }
 
 // --- HELPER CLASS ---
-// This sits outside the EnemySpawner class but in the same file
 public class SpawnerEnemy : MonoBehaviour
 {
     public delegate void EnemyDestroyed();
@@ -91,9 +118,6 @@ public class SpawnerEnemy : MonoBehaviour
 
     private bool hasReported = false;
 
-    /// <summary>
-    /// Call this from EnemyAI or CommanderAI when they die to clear the wave faster.
-    /// </summary>
     public void ReportDeath()
     {
         if (hasReported) return;
@@ -103,7 +127,6 @@ public class SpawnerEnemy : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Safety fallback: ensure the list is cleared if the object is deleted
         ReportDeath();
     }
 }

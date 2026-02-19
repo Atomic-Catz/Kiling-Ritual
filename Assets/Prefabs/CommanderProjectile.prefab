@@ -153,10 +153,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eac2863db147ecb438ef289e97abbd03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimpleProjectile
-  speed: 25
+  speed: 35
   damage: 20
-  lifeTime: 6
-  owner: {fileID: 0}
+  lifeTime: 10
+  owner: {fileID: 2527979015679933737, guid: d720b92b0b7ea2c4d9c43896d893a67d, type: 3}
 --- !u!96 &2481255095750668842
 TrailRenderer:
   serializedVersion: 3
@@ -214,8 +214,8 @@ TrailRenderer:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0.014258172
-        value: 0.35186288
+        time: 0.026476648
+        value: 0.27663705
         inSlope: 0
         outSlope: 0
         tangentMode: 0

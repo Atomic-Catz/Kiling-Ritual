@@ -27,8 +27,8 @@ public class CommanderAI : MonoBehaviour
     public float strafeSpeed = 2f;
 
     [Header("Health & Death")]
-    public float health = 10f;
-    public int pointsOnDeath = 50;
+    public float health = 500f;
+    public int pointsOnDeath = 250;
 
     [Header("Powerup Drop")]
     public List<GameObject> powerupDrops = new List<GameObject>();
@@ -47,6 +47,7 @@ public class CommanderAI : MonoBehaviour
     [Header("Misc")]
     public float updateRate = 0.1f;
 
+    private bool isDead = false;
     private float lastFireTime = -999f;
     private float strafeTimer;
     private Dictionary<EnemyAI, int> buffedOriginals = new Dictionary<EnemyAI, int>();
@@ -248,13 +249,16 @@ public class CommanderAI : MonoBehaviour
 
     private void Die()
     {
-        if (health > 0f) health = 0f;
-        
-        // Report death to Wave Spawner instantly
+        if (isDead) return; // If already dead, stop right here!
+        isDead = true;
+
+        if (health > 0) health = 0;
+    
         GetComponent<SpawnerEnemy>()?.ReportDeath();
-        
         RevertAllBuffs();
-        if (ScoreManager.Instance != null) ScoreManager.Instance.AddPoints(0, pointsOnDeath);
+
+        if (ScoreManager.Instance != null) 
+            ScoreManager.Instance.AddPoints(0, pointsOnDeath);
 
         if (agent != null) agent.enabled = false;
         if (animator != null) animator.enabled = false;
