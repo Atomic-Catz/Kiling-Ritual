@@ -4,6 +4,11 @@ using UnityEngine;
 
 public class WaveManager : MonoBehaviour
 {
+    [Header("Boss Settings")] 
+    public GameObject bossPrefab;
+    // We can decide how many spawners should spawn a boss
+    public int bossesPerWave = 1; 
+    
     [Header("Trader Settings")]
     public GameObject traderPrefab;
     public Transform traderSpawnPoint;
@@ -14,9 +19,9 @@ public class WaveManager : MonoBehaviour
 
     [Header("Zombies Scaling (CoD Style)")]
     public float breakDuration = 15f; 
-    public int baseEnemyCount = 6;      // Starting enemies at Wave 1
-    public float countMultiplier = 1.15f; // +15% enemies per wave
-    public float healthMultiplier = 1.1f; // +10% health per wave (until cap)
+    public int baseEnemyCount = 6;
+    public float countMultiplier = 1.15f;
+    public float healthMultiplier = 1.1f;
 
     private int currentWave = 0;
 
@@ -36,22 +41,31 @@ public class WaveManager : MonoBehaviour
         while (true)
         {
             currentWave++;
+            // Check if this is a multiple of 5
+            bool isBossWave = (currentWave % 5 == 0);
             
-            // MATH: Quantity and Health scaling
             int totalEnemiesForWave = Mathf.RoundToInt(baseEnemyCount * Mathf.Pow(countMultiplier, currentWave - 1)) + (currentWave * 2);
-            float currentHealthBoost = Mathf.Pow(healthMultiplier, Mathf.Min(currentWave, 20) - 1); // Health caps scaling at Wave 20
+            float currentHealthBoost = Mathf.Pow(healthMultiplier, Mathf.Min(currentWave, 20) - 1);
 
-            Debug.Log($"<color=red>Wave {currentWave} Started!</color> Enemies: {totalEnemiesForWave}, HP Boost: {currentHealthBoost:F2}x");
+            Debug.Log($"<color=red>Wave {currentWave} Started!</color> {(isBossWave ? "<b>BOSS WAVE!</b>" : "")}");
 
-            // Distribute total count among all spawners
+            // Distribute regular enemies
             int enemiesPerSpawner = totalEnemiesForWave / spawners.Length;
-            foreach (var spawner in spawners)
+
+            // We only want the boss to spawn once, so we'll pick the first spawner to handle it
+            for (int i = 0; i < spawners.Length; i++)
             {
-                if (spawner != null)
-                    spawner.StartWave(enemiesPerSpawner, currentHealthBoost);
+                if (spawners[i] != null)
+                {
+                    // If it's a boss wave, give the bossPrefab to the first spawner (index 0)
+                    GameObject bossToSpawn = (isBossWave && i == 0) ? bossPrefab : null;
+                    
+                    // We need to update the StartWave call in EnemySpawner to accept this!
+                    spawners[i].StartWave(enemiesPerSpawner, currentHealthBoost, bossToSpawn);
+                }
             }
 
-            // Wait until all spawners report 0 active enemies AND 0 enemies left to spawn
+            // Wait until all spawners report 0 active enemies
             bool allClear = false;
             while (!allClear)
             {

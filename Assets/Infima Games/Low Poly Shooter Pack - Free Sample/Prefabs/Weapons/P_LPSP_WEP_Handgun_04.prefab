@@ -886,6 +886,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7170d51de97d79e4fb11d3321667acb0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  weaponName: SPistol
+  isPurchased: 0
+  weaponPrice: 1000
   automatic: 0
   projectileImpulse: 400
   roundsPerMinutes: 500
@@ -908,8 +911,8 @@ MonoBehaviour:
   audioClipFireEmpty: {fileID: 8300000, guid: 0c187ee2790c74c4e9985aa1ee1a12d5, type: 3}
   reloadDuration: 1.5
   ammoApplyTime: 0.6
-  reserveAmmunition: 90
-  reserveAmmunitionMax: 90
+  reserveAmmunition: 120
+  reserveAmmunitionMax: 120
   autoReloadOnEmpty: 1
   allowReloadInterrupt: 1
 --- !u!114 &737853272118125277

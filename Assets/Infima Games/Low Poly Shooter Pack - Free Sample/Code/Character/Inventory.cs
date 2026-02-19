@@ -8,18 +8,8 @@ namespace InfimaGames.LowPolyShooterPack
     {
         #region FIELDS
         
-        /// <summary>
-        /// Array of all weapons. These are gotten in the order that they are parented to this object.
-        /// </summary>
         private WeaponBehaviour[] weapons;
-        
-        /// <summary>
-        /// Currently equipped WeaponBehaviour.
-        /// </summary>
         private WeaponBehaviour equipped;
-        /// <summary>
-        /// Currently equipped index.
-        /// </summary>
         private int equippedIndex = -1;
         
         #endregion
@@ -28,43 +18,52 @@ namespace InfimaGames.LowPolyShooterPack
         
         public override void Init(int equippedAtStart = 0)
         {
-            //Cache all weapons. Beware that weapons need to be parented to the object this component is on!
+            // Cache weapons
             weapons = GetComponentsInChildren<WeaponBehaviour>(true);
-            
-            //Disable all weapons. This makes it easier for us to only activate the one we need.
+    
+            // Disable everything
             foreach (WeaponBehaviour weapon in weapons)
                 weapon.gameObject.SetActive(false);
 
-            //Equip.
-            Equip(equippedAtStart);
+            // Find the starting gun (Pistol)
+            int firstValid = -1;
+            for (int i = 0; i < weapons.Length; i++)
+            {
+                var w = weapons[i] as Weapon;
+                if (w != null && w.isPurchased)
+                {
+                    firstValid = i;
+                    break;
+                }
+            }
+
+            int indexToEquip = firstValid != -1 ? firstValid : equippedAtStart;
+
+            // FORCE INITIALIZATION:
+            // We set the references BEFORE activating so the UI sees them immediately
+            equippedIndex = indexToEquip;
+            equipped = weapons[equippedIndex];
+    
+            // Now activate it. This triggers Weapon.Awake()
+            equipped.gameObject.SetActive(true);
         }
         
         public override WeaponBehaviour Equip(int index)
         {
-            //If we have no weapons, we can't really equip anything.
-            if (weapons == null)
-                return equipped;
-            
-            //The index needs to be within the array's bounds.
-            if (index > weapons.Length - 1)
+            if (weapons == null || index < 0 || index >= weapons.Length) return equipped;
+
+            var weaponScript = weapons[index] as Weapon;
+    
+            // Only allow equipping if it's actually purchased
+            if (weaponScript != null && !weaponScript.isPurchased)
                 return equipped;
 
-            //No point in allowing equipping the already-equipped weapon.
-            if (equippedIndex == index)
-                return equipped;
-            
-            //Disable the currently equipped weapon, if we have one.
-            if (equipped != null)
-                equipped.gameObject.SetActive(false);
-
-            //Update index.
+            // Standard swap logic...
+            if (equipped != null) equipped.gameObject.SetActive(false);
             equippedIndex = index;
-            //Update equipped.
             equipped = weapons[equippedIndex];
-            //Activate the newly-equipped weapon.
             equipped.gameObject.SetActive(true);
 
-            //Return.
             return equipped;
         }
         
@@ -74,29 +73,40 @@ namespace InfimaGames.LowPolyShooterPack
 
         public override int GetLastIndex()
         {
-            //Get last index with wrap around.
-            int newIndex = equippedIndex - 1;
-            if (newIndex < 0)
-                newIndex = weapons.Length - 1;
+            // Look backwards for the next purchased weapon
+            int checkIndex = equippedIndex;
+            for (int i = 0; i < weapons.Length; i++)
+            {
+                checkIndex--;
+                if (checkIndex < 0)
+                    checkIndex = weapons.Length - 1;
 
-            //Return.
-            return newIndex;
+                var w = weapons[checkIndex] as Weapon;
+                if (w != null && w.isPurchased)
+                    return checkIndex;
+            }
+
+            return equippedIndex;
         }
 
         public override int GetNextIndex()
         {
-            //Get next index with wrap around.
-            int newIndex = equippedIndex + 1;
-            if (newIndex > weapons.Length - 1)
-                newIndex = 0;
+            // Look forwards for the next purchased weapon
+            int checkIndex = equippedIndex;
+            for (int i = 0; i < weapons.Length; i++)
+            {
+                checkIndex = (checkIndex + 1) % weapons.Length;
 
-            //Return.
-            return newIndex;
+                var w = weapons[checkIndex] as Weapon;
+                if (w != null && w.isPurchased)
+                    return checkIndex;
+            }
+
+            return equippedIndex;
         }
 
         public override WeaponBehaviour GetEquipped() => equipped;
         public override int GetEquippedIndex() => equippedIndex;
-        
         public override WeaponBehaviour[] GetAllWeapons() => weapons;
 
         #endregion
