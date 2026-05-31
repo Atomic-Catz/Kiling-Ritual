@@ -5,7 +5,7 @@ using UnityEngine;
 namespace InfimaGames.LowPolyShooterPack
 {
     /// <summary>
-    /// Camera Look. Handles the rotation of the camera.
+    /// Camera Look. Handles the rotation of the camera with network isolation layers.
     /// </summary>
     public class CameraLook : MonoBehaviour
     {
@@ -36,7 +36,7 @@ namespace InfimaGames.LowPolyShooterPack
         /// <summary>
         /// Player Character.
         /// </summary>
-        private CharacterBehaviour playerCharacter;
+        private Character playerCharacter;
         /// <summary>
         /// The player character's rigidbody component.
         /// </summary>
@@ -51,63 +51,93 @@ namespace InfimaGames.LowPolyShooterPack
         /// </summary>
         private Quaternion rotationCamera;
 
+        /// <summary>
+        /// Cache indicator to verify if this specific instance belongs to our local player window.
+        /// </summary>
+        private bool isLocalOwner;
+
         #endregion
         
         #region UNITY
 
         private void Awake()
         {
-            //Get Player Character.
-            playerCharacter = ServiceLocator.Current.Get<IGameModeService>().GetPlayerCharacter();
-            //Cache the rigidbody.
-            playerCharacterRigidbody = playerCharacter.GetComponent<Rigidbody>();
+            // Find our unique body script higher up in the hierarchy
+            playerCharacter = GetComponentInParent<Character>();
+            
+            if (playerCharacter != null)
+            {
+                playerCharacterRigidbody = playerCharacter.GetComponent<Rigidbody>();
+            }
+            else
+            {
+                Debug.LogError($"[CameraLook] Could not locate a Character script component above {gameObject.name}!");
+            }
         }
+
         private void Start()
         {
-            //Cache the character's initial rotation.
+            if (playerCharacter == null) return;
+
+            // Evaluate network ownership here in Start() instead of Awake().
+            // This gives PurrNet enough frames to register who actually owns this prefab instance.
+            isLocalOwner = playerCharacter.isOwner;
+
+            // Cache the character's initial rotation.
             rotationCharacter = playerCharacter.transform.localRotation;
-            //Cache the camera's initial rotation.
+            // Cache the camera's initial rotation.
             rotationCamera = transform.localRotation;
         }
+
         private void LateUpdate()
         {
-            //Frame Input. The Input to add this frame!
+            // If network ownership hasn't finished handshaking yet, check it again as a fallback
+            if (playerCharacter != null && !isLocalOwner && playerCharacter.isOwner)
+            {
+                isLocalOwner = true;
+            }
+
+            // SECURITY CHECK: Only run look logic if we explicitly own this character instance
+            if (!isLocalOwner || playerCharacter == null) return;
+
+            // Frame Input. The Input to add this frame!
             Vector2 frameInput = playerCharacter.IsCursorLocked() ? playerCharacter.GetInputLook() : default;
-            //Sensitivity.
+            
+            // Sensitivity scaling.
             frameInput *= sensitivity;
 
-            //Yaw.
+            // Yaw (Horizontal look around).
             Quaternion rotationYaw = Quaternion.Euler(0.0f, frameInput.x, 0.0f);
-            //Pitch.
+            // Pitch (Vertical tilt look).
             Quaternion rotationPitch = Quaternion.Euler(-frameInput.y, 0.0f, 0.0f);
             
-            //Save rotation. We use this for smooth rotation.
+            // Save rotation values. We use this for smooth rotation tracking filters.
             rotationCamera *= rotationPitch;
             rotationCharacter *= rotationYaw;
             
-            //Local Rotation.
+            // Local Rotation reference wrapper.
             Quaternion localRotation = transform.localRotation;
 
-            //Smooth.
+            // Smooth interpolation engine filters.
             if (smooth)
             {
-                //Interpolate local rotation.
+                // Interpolate local camera rotation.
                 localRotation = Quaternion.Slerp(localRotation, rotationCamera, Time.deltaTime * interpolationSpeed);
-                //Interpolate character rotation.
+                // Interpolate character body movement position rotation.
                 playerCharacterRigidbody.MoveRotation(Quaternion.Slerp(playerCharacterRigidbody.rotation, rotationCharacter, Time.deltaTime * interpolationSpeed));
             }
             else
             {
-                //Rotate local.
+                // Rotate camera locally.
                 localRotation *= rotationPitch;
-                //Clamp.
+                // Clamp looking pitch layout boundaries.
                 localRotation = Clamp(localRotation);
 
-                //Rotate character.
+                // Rotate the rigid base body asset structure.
                 playerCharacterRigidbody.MoveRotation(playerCharacterRigidbody.rotation * rotationYaw);
             }
             
-            //Set.
+            // Apply calculations back to transform layout.
             transform.localRotation = localRotation;
         }
 
@@ -125,14 +155,13 @@ namespace InfimaGames.LowPolyShooterPack
             rotation.z /= rotation.w;
             rotation.w = 1.0f;
 
-            //Pitch.
+            // Pitch math extraction logic.
             float pitch = 2.0f * Mathf.Rad2Deg * Mathf.Atan(rotation.x);
 
-            //Clamp.
+            // Bounds capping.
             pitch = Mathf.Clamp(pitch, yClamp.x, yClamp.y);
             rotation.x = Mathf.Tan(0.5f * Mathf.Deg2Rad * pitch);
 
-            //Return.
             return rotation;
         }
 

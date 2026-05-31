@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using InfimaGames.LowPolyShooterPack;
-using Random = UnityEngine.Random;
+using PurrNet; 
 
 public class Projectile : MonoBehaviour
 {
@@ -24,127 +24,172 @@ public class Projectile : MonoBehaviour
     [HideInInspector]
     public bool instaKill = false;
 
+    private float speed = 400f; 
+    private Collider ownerCollider;
+    private bool isServerInstance;
+    private bool isInitialized = false;
+
+    // Tracks the unique network ID of the player who fired
+    private int attackerPlayerId;
+
+    // Receive the attacker ID when the projectile is spawned
+    public void InitializeProjectile(Collider bulletOwner, int attackerId, bool isInstaKill)
+    {
+        ownerCollider = bulletOwner;
+        attackerPlayerId = attackerId; 
+        instaKill = isInstaKill;
+
+        if (ownerCollider != null)
+        {
+            Physics.IgnoreCollision(ownerCollider, GetComponent<Collider>(), true);
+        }
+    }
+
     private void Start()
     {
-        // Ignore collisions with player
-        var gameModeService = ServiceLocator.Current.Get<IGameModeService>();
-        if (gameModeService != null && gameModeService.GetPlayerCharacter() != null)
+        isServerInstance = NetworkManager.main != null && NetworkManager.main.isServer;
+        
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
         {
-            Physics.IgnoreCollision(gameModeService.GetPlayerCharacter().GetComponent<Collider>(), GetComponent<Collider>());
+            rb.isKinematic = true;
+            rb.useGravity = false;
         }
 
+        var gameMode = ServiceLocator.Current.Get<IGameModeService>();
+        if (gameMode != null && gameMode.GetPlayerCharacter() != null)
+        {
+            var weapon = gameMode.GetPlayerCharacter().GetInventory().GetEquipped() as Weapon;
+            if (weapon != null)
+            {
+                System.Reflection.FieldInfo field = typeof(Weapon).GetField("projectileImpulse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (field != null) speed = (float)field.GetValue(weapon);
+            }
+        }
+
+        isInitialized = true;
         StartCoroutine(DestroyAfterTimer());
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void Update()
     {
-        // Ignore other projectiles
-        if (collision.gameObject.GetComponent<Projectile>() != null)
-            return;
+        if (!isInitialized) return;
 
-        // Try to get either script
-        EnemyAI enemy = collision.gameObject.GetComponent<EnemyAI>();
-        CommanderAI commander = collision.gameObject.GetComponent<CommanderAI>();
+        float moveDistance = speed * Time.deltaTime;
+        Vector3 moveDirection = transform.forward;
+
+        if (Physics.Raycast(transform.position, moveDirection, out RaycastHit hit, moveDistance + 0.1f))
+        {
+            if (hit.collider.gameObject.GetComponent<Projectile>() == null && 
+                (ownerCollider == null || hit.collider.gameObject != ownerCollider.gameObject))
+            {
+                transform.position = hit.point;
+                EvaluateImpact(hit.collider.gameObject, hit);
+                return;
+            }
+        }
+
+        transform.Translate(Vector3.forward * moveDistance);
+    }
+
+    private void EvaluateImpact(GameObject targetHit, RaycastHit hit)
+    {
+        EnemyAI enemy = targetHit.GetComponent<EnemyAI>();
+        CommanderAI commander = targetHit.GetComponent<CommanderAI>();
 
         if (enemy != null)
         {
-            // Damage the basic enemy
-            enemy.TakeDamage(instaKill ? 999999 : damage);
-            
-            // Shared effects
-            ExecuteEnemyHit(collision);
+            if (isServerInstance)
+            {
+                // Pass attackerPlayerId along to the enemy component
+                enemy.TakeDamage(instaKill ? 999999 : damage, attackerPlayerId);
+            }
+            ExecuteManualHit(hit, bloodImpactPrefabs);
             return;
         }
         else if (commander != null)
         {
-            // Damage the commander (using float for his overloaded method)
-            commander.TakeDamage(instaKill ? 999999f : (float)damage);
-            
-            // Shared effects
-            ExecuteEnemyHit(collision);
+            if (isServerInstance)
+            {
+                // FIXED: Explicitly matches your Commander's float requirement for damage parameter
+                float finalDamage = instaKill ? 999999f : (float)damage;
+                commander.TakeDamage(finalDamage, attackerPlayerId);
+            }
+            ExecuteManualHit(hit, bloodImpactPrefabs);
             return;
         }
 
-        // --- If we reach here, we didn't hit an enemy ---
-
-        if (!destroyOnImpact)
-            StartCoroutine(DestroyTimer());
-        else
-            Destroy(gameObject);
-
-        HandleSurfaceEffects(collision);
-    }
-
-    /// <summary>
-    /// Handles the visual blood effect and destroys the bullet.
-    /// Used for both Basic Enemies and Commanders.
-    /// </summary>
-    private void ExecuteEnemyHit(Collision collision)
-    {
-        if (bloodImpactPrefabs.Length > 0)
-        {
-            Instantiate(
-                bloodImpactPrefabs[Random.Range(0, bloodImpactPrefabs.Length)],
-                transform.position,
-                Quaternion.LookRotation(collision.contacts[0].normal)
-            );
-        }
-        Destroy(gameObject);
-    }
-
-    private void HandleSurfaceEffects(Collision collision)
-    {
-        string tag = collision.transform.tag;
+        string tag = targetHit.tag;
 
         if (tag == "Blood")
-            SpawnImpact(bloodImpactPrefabs, collision);
+            ExecuteManualHit(hit, bloodImpactPrefabs);
         else if (tag == "Metal")
-            SpawnImpact(metalImpactPrefabs, collision);
+            ExecuteManualHit(hit, metalImpactPrefabs);
         else if (tag == "Dirt")
-            SpawnImpact(dirtImpactPrefabs, collision);
+            ExecuteManualHit(hit, dirtImpactPrefabs);
         else if (tag == "Concrete")
-            SpawnImpact(concreteImpactPrefabs, collision);
+            ExecuteManualHit(hit, concreteImpactPrefabs);
         else if (tag == "Target")
         {
-            var target = collision.transform.gameObject.GetComponent<TargetScript>();
-            if(target != null) target.isHit = true;
-            Destroy(gameObject);
+            var target = targetHit.GetComponent<TargetScript>();
+            if (target != null) target.isHit = true;
+            DestroyProjectileInstance();
         }
         else if (tag == "ExplosiveBarrel")
         {
-            var barrel = collision.transform.gameObject.GetComponent<ExplosiveBarrelScript>();
-            if(barrel != null) barrel.explode = true;
-            Destroy(gameObject);
+            var barrel = targetHit.GetComponent<ExplosiveBarrelScript>();
+            if (barrel != null) barrel.explode = true;
+            DestroyProjectileInstance();
         }
         else if (tag == "GasTank")
         {
-            var tank = collision.transform.gameObject.GetComponent<GasTankScript>();
-            if(tank != null) tank.isHit = true;
-            Destroy(gameObject);
+            var tank = targetHit.GetComponent<GasTankScript>();
+            if (tank != null) tank.isHit = true;
+            DestroyProjectileInstance();
+        }
+        else
+        {
+            if (!destroyOnImpact)
+                StartCoroutine(DestroyTimer());
+            else
+                DestroyProjectileInstance();
         }
     }
 
-    private void SpawnImpact(Transform[] prefabs, Collision collision)
+    private void ExecuteManualHit(RaycastHit hit, Transform[] prefabs)
     {
-        if (prefabs.Length == 0)
-            return;
+        if (prefabs != null && prefabs.Length > 0)
+        {
+            Instantiate(
+                prefabs[Random.Range(0, prefabs.Length)],
+                hit.point,
+                Quaternion.LookRotation(hit.normal)
+            );
+        }
+        DestroyProjectileInstance();
+    }
 
-        Instantiate(prefabs[Random.Range(0, prefabs.Length)],
-            transform.position,
-            Quaternion.LookRotation(collision.contacts[0].normal));
-
-        Destroy(gameObject);
+    private void DestroyProjectileInstance()
+    {
+        if (isServerInstance)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     private IEnumerator DestroyTimer()
     {
         yield return new WaitForSeconds(Random.Range(minDestroyTime, maxDestroyTime));
-        if(gameObject != null) Destroy(gameObject);
+        DestroyProjectileInstance();
     }
 
     private IEnumerator DestroyAfterTimer()
     {
         yield return new WaitForSeconds(destroyAfter);
-        if(gameObject != null) Destroy(gameObject);
+        DestroyProjectileInstance();
     }
 }

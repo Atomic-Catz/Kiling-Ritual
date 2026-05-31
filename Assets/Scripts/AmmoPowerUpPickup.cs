@@ -1,78 +1,44 @@
 using UnityEngine;
+using PurrNet;
 
 namespace InfimaGames.LowPolyShooterPack
 {
     [RequireComponent(typeof(Collider))]
-    public class AmmoPowerUpPickup : MonoBehaviour
+    public class AmmoPowerUpPickup : NetworkBehaviour
     {
-        [Header("Ammo Settings")]
-        [Tooltip("How much reserve ammo to give per weapon.")]
-        public int ammoAmount = 30;
-
-        [Header("Visuals")]
+        public int ammoAmount = 300; // Increased amount since it's Max Ammo!
         public Vector3 rotationSpeed = new Vector3(0f, 180f, 0f);
-        //public Color pickupColor = Color.cyan;
-
-        [Header("Pickup Settings")]
-        [Tooltip("Seconds before the pickup disappears if not collected.")]
         public float despawnTime = 15f;
 
-        private Renderer rend;
+        private bool isCollected = false;
 
         private void Awake()
         {
-            // Ensure trigger
             Collider col = GetComponent<Collider>();
             col.isTrigger = true;
-
-            // Color
-            //rend = GetComponentInChildren<Renderer>();
-            //if (rend != null)
-                //rend.material.color = pickupColor;
-
-            // Auto-despawn
-            Destroy(gameObject, despawnTime);
         }
 
-        private void Update()
+        public void Start()
         {
-            // Spin
-            transform.Rotate(rotationSpeed * Time.deltaTime, Space.World);
+            if (isServer) Destroy(gameObject, despawnTime);
         }
+
+        private void Update() => transform.Rotate(rotationSpeed * Time.deltaTime, Space.World);
 
         private void OnTriggerEnter(Collider other)
         {
-            // Get player character
-            CharacterBehaviour character =
-                other.GetComponent<CharacterBehaviour>() ??
-                other.GetComponentInParent<CharacterBehaviour>();
+            if (!isServer || isCollected) return;
 
-            if (character == null)
-                return;
-
-            GiveAmmo(character);
-            Destroy(gameObject);
-        }
-
-        private void GiveAmmo(CharacterBehaviour character)
-        {
-            WeaponBehaviour[] weapons = character.GetInventory().GetAllWeapons();
-            if (weapons == null)
-                return;
-
-            foreach (WeaponBehaviour wb in weapons)
+            CharacterBehaviour cb = other.GetComponent<CharacterBehaviour>() ?? other.GetComponentInParent<CharacterBehaviour>();
+            if (cb != null)
             {
-                Weapon weapon = wb as Weapon;
-                if (weapon == null)
-                    continue;
-
-                if (!weapon.IsReserveFull())
+                isCollected = true;
+                if (GlobalBuffManager.Instance != null)
                 {
-                    weapon.AddReserveAmmunition(ammoAmount);
+                    GlobalBuffManager.Instance.ActivateMaxAmmo(ammoAmount);
                 }
+                Destroy(gameObject);
             }
-
-            Debug.Log("AMMO POWER-UP COLLECTED!");
         }
     }
 }

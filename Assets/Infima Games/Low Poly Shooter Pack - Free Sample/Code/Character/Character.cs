@@ -3,6 +3,7 @@
 using System;
 using UnityEngine;
 using System.Collections;
+using PurrNet;
 using UnityEngine.InputSystem;
 
 namespace InfimaGames.LowPolyShooterPack
@@ -23,39 +24,24 @@ namespace InfimaGames.LowPolyShooterPack
         private float lastHealTime = -Mathf.Infinity;
         private Coroutine healCoroutine;
         
-		[Header("Interaction")]
-		[SerializeField] private float interactRange = 3f;
-		[SerializeField] private LayerMask interactMask;
+        [Header("Interaction")]
+        [SerializeField] private float interactRange = 3f;
+        [SerializeField] private LayerMask interactMask;
 
         private IInteractable currentInteractable;
 
         [Header("Inventory")]
-        
-        [Tooltip("Inventory.")]
-        [SerializeField]
-        private InventoryBehaviour inventory;
+        [SerializeField] private InventoryBehaviour inventory;
 
         [Header("Cameras")]
-
-        [Tooltip("Normal Camera.")]
-        [SerializeField]
-        private Camera cameraWorld;
+        [SerializeField] private Camera cameraWorld;
 
         [Header("Animation")]
-
-        [Tooltip("Determines how smooth the locomotion blendspace is.")]
-        [SerializeField]
-        private float dampTimeLocomotion = 0.15f;
-
-        [Tooltip("How smoothly we play aiming transitions. Beware that this affects lots of things!")]
-        [SerializeField]
-        private float dampTimeAiming = 0.3f;
+        [SerializeField] private float dampTimeLocomotion = 0.15f;
+        [SerializeField] private float dampTimeAiming = 0.3f;
         
         [Header("Animation Procedural")]
-        
-        [Tooltip("Character Animator.")]
-        [SerializeField]
-        private Animator characterAnimator;
+        [SerializeField] private Animator characterAnimator;
 
         #endregion
 
@@ -77,7 +63,6 @@ namespace InfimaGames.LowPolyShooterPack
         private MagazineBehaviour equippedWeaponMagazine;
         private CharacterHealth characterHealth;
 
-
         private bool reloading;
         private bool inspecting;
         private bool holstering;
@@ -92,6 +77,8 @@ namespace InfimaGames.LowPolyShooterPack
         private bool tutorialTextVisible;
         private bool cursorLocked;
 
+        private Coroutine reloadSafetyCoroutine;
+
         #endregion
 
         #region CONSTANTS
@@ -105,39 +92,23 @@ namespace InfimaGames.LowPolyShooterPack
 
         private void HandleDeath()
         {
-            Debug.Log("[Character] HandleDeath called");
-
-            // Disable player logic
             enabled = false;
-            if (characterKinematics != null)
-                characterKinematics.enabled = false;
+            if (characterKinematics != null) characterKinematics.enabled = false;
+            if (deathScreen != null) deathScreen.SetActive(true);
 
-            // Show death UI
-            if (deathScreen != null)
-                deathScreen.SetActive(true);
-            else
-                Debug.LogError("Death Screen is NOT assigned!");
-
-            // Cursor
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-
-            // Pause
-            //Time.timeScale = 0f;
         }
         
-        protected override void Awake()
+        private void Awake()
         {
-            base.Awake();
-
             cursorLocked = true;
             UpdateCursorState();
 
             characterKinematics = GetComponent<CharacterKinematics>();
             characterHealth = GetComponent<CharacterHealth>();
 
-            if (characterHealth != null)
-                characterHealth.OnDeath += HandleDeath;
+            if (characterHealth != null) characterHealth.OnDeath += HandleDeath;
 
             inventory.Init();
             RefreshWeaponSetup();
@@ -145,13 +116,20 @@ namespace InfimaGames.LowPolyShooterPack
 
         private void OnDestroy()
         {
-            if (characterHealth != null)
-                characterHealth.OnDeath -= HandleDeath;
+            if (characterHealth != null) characterHealth.OnDeath -= HandleDeath;
         }
-
 
         protected override void Start()
         {
+            if (!isOwner)
+            {
+                if(cameraWorld != null) cameraWorld.gameObject.SetActive(false);
+                if (characterKinematics != null) characterKinematics.enabled = true;
+                    
+                var movementScript = GetComponent("Movement") as MonoBehaviour;
+                if (movementScript != null) movementScript.enabled = false;
+            }
+            
             layerHolster = characterAnimator.GetLayerIndex("Layer Holster");
             layerActions = characterAnimator.GetLayerIndex("Layer Actions");
             layerOverlay = characterAnimator.GetLayerIndex("Layer Overlay");
@@ -159,6 +137,18 @@ namespace InfimaGames.LowPolyShooterPack
 
         protected override void Update()
         {
+            if (!isOwner) return;
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse != null && cursorLocked)
+            {
+                axisLook = mouse.delta.ReadValue() * 0.05f;
+            }
+            else
+            {
+                axisLook = Vector2.zero;
+            }
+    
             aiming = holdingButtonAim && CanAim();
             running = holdingButtonRun && CanRun();
 
@@ -177,9 +167,9 @@ namespace InfimaGames.LowPolyShooterPack
 
         protected override void LateUpdate()
         {
-            if (equippedWeapon == null) return;
-            if (equippedWeaponScope == null) return;
-            if(characterKinematics != null) characterKinematics.Compute();
+            if (!isOwner) return;
+            if (equippedWeapon == null || equippedWeaponScope == null) return;
+            if (characterKinematics != null) characterKinematics.Compute();
         }
 
         #endregion
@@ -200,11 +190,9 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region METHODS
 
-
         private void CheckForInteractable()
         {
             currentInteractable = null;
-
             Ray ray = cameraWorld.ViewportPointToRay(new Vector3(0.5f, 0.5f));
             if (Physics.Raycast(ray, out RaycastHit hit, interactRange, interactMask))
             {
@@ -212,12 +200,10 @@ namespace InfimaGames.LowPolyShooterPack
             }
         }
         
-        
         private void UpdateAnimator()
         {
             characterAnimator.SetFloat(HashMovement, Mathf.Clamp01(Mathf.Abs(axisMovement.x) + Mathf.Abs(axisMovement.y)), dampTimeLocomotion, Time.deltaTime);
             characterAnimator.SetFloat(HashAimingAlpha, Convert.ToSingle(aiming), 0.25f / 1.0f * dampTimeAiming, Time.deltaTime);
-
             characterAnimator.SetBool("Aim", aiming);
             characterAnimator.SetBool("Running", running);
         }
@@ -231,8 +217,11 @@ namespace InfimaGames.LowPolyShooterPack
         private void Fire()
         {
             lastShotTime = Time.time;
-            equippedWeapon.Fire();
+            
+            if(equippedWeapon != null) equippedWeapon.Fire();
             characterAnimator.CrossFade("Fire", 0.05f, layerOverlay, 0);
+            
+            RequestFireServer();
         }
 
         private void PlayReloadAnimation()
@@ -240,7 +229,17 @@ namespace InfimaGames.LowPolyShooterPack
             string stateName = equippedWeapon.HasAmmunition() ? "Reload" : "Reload Empty";
             characterAnimator.Play(stateName, layerActions, 0.0f);
             reloading = true;
-            equippedWeapon.Reload();
+
+            if (isOwner) equippedWeapon.Reload();
+
+            if (reloadSafetyCoroutine != null) StopCoroutine(reloadSafetyCoroutine);
+            reloadSafetyCoroutine = StartCoroutine(SafetyUnlockReload(2.5f));
+        }
+
+        private IEnumerator SafetyUnlockReload(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (reloading) reloading = false;
         }
 
         private IEnumerator Equip(int index = 0)
@@ -264,12 +263,18 @@ namespace InfimaGames.LowPolyShooterPack
             if (weaponAttachmentManager == null) return;
             equippedWeaponScope = weaponAttachmentManager.GetEquippedScope();
             equippedWeaponMagazine = weaponAttachmentManager.GetEquippedMagazine();
+
+            if (equippedWeapon is Weapon customWeapon && cameraWorld != null)
+            {
+                customWeapon.SetupNetworkOwner(this, cameraWorld.transform);
+            }
         }
 
         private void FireEmpty()
         {
             lastShotTime = Time.time;
             characterAnimator.CrossFade("Fire Empty", 0.05f, layerOverlay, 0);
+            RequestFireEmptyServer();
         }
 
         private void UpdateCursorState()
@@ -306,42 +311,23 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region INPUT
 
-
         public void OnTryInteract(InputAction.CallbackContext context)
         {
-            if (!cursorLocked) return;
-            if (context.phase != InputActionPhase.Performed) return;
-            
-            if (currentInteractable != null)
-                currentInteractable.Interact(this);
+            if (!isOwner || !cursorLocked || context.phase != InputActionPhase.Performed) return;
+            if (currentInteractable != null) currentInteractable.Interact(this);
         }
         
         public void OnTryHeal(InputAction.CallbackContext context)
         {
-            if (!cursorLocked || characterHealth == null)
-                return;
+            if (!isOwner || !cursorLocked || characterHealth == null || context.phase != InputActionPhase.Started) return;
+            if (reloading || inspecting || holstering || characterHealth.GetCurrentHealth() >= characterHealth.GetMaxHealth()) return;
+            if (Time.time - lastHealTime < healCooldown) return;
 
-            if (context.phase != InputActionPhase.Started)
-                return;
-
-            if (reloading || inspecting || holstering)
-                return;
-
-            if (characterHealth.GetCurrentHealth() >= characterHealth.GetMaxHealth())
-                return;
-
-            if (Time.time - lastHealTime < healCooldown)
-            {
-                Debug.Log("Heal on cooldown!");
-                return;
-            }
-
-            // Start gradual healing
             if (healCoroutine != null) StopCoroutine(healCoroutine);
-            healCoroutine = StartCoroutine(GradualHeal(healAmount, healDuration));
+            RequestHealServer(healAmount, healDuration);
             lastHealTime = Time.time;
         }
-        
+
         private IEnumerator GradualHeal(float totalAmount, float duration)
         {
             float healed = 0f;
@@ -349,20 +335,17 @@ namespace InfimaGames.LowPolyShooterPack
 
             while (healed < totalAmount)
             {
-                if (characterHealth.GetCurrentHealth() >= characterHealth.GetMaxHealth())
-                    break;
-
+                if (characterHealth.GetCurrentHealth() >= characterHealth.GetMaxHealth()) break;
                 float healThisFrame = rate * Time.deltaTime;
                 characterHealth.Heal(healThisFrame);
                 healed += healThisFrame;
-
                 yield return null;
             }
         }
         
         public void OnTryFire(InputAction.CallbackContext context)
         {
-            if (!cursorLocked) return;
+            if (!isOwner || !cursorLocked) return;
 
             switch (context)
             {
@@ -386,47 +369,113 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void OnTryPlayReload(InputAction.CallbackContext context)
         {
-            if (!cursorLocked) return;
-            if (!CanPlayAnimationReload()) return;
+            if (!isOwner || !cursorLocked || !CanPlayAnimationReload() || context.phase != InputActionPhase.Performed) return;
 
-            switch (context)
+            bool hasAmmo = equippedWeapon.GetAmmunitionCurrent() > 0 || (equippedWeapon is Weapon w && w.GetReserveAmmunition() > 0);
+            if (hasAmmo) RequestReloadServer();
+            else if (equippedWeapon is Weapon w2 && w2.GetAudioClipFireEmpty() != null)
+                AudioSource.PlayClipAtPoint(w2.GetAudioClipFireEmpty(), transform.position);
+        }
+
+        // --- PURRNET RPC CHANNELS ---
+
+        [ServerRpc]
+        public void CmdSpawnNetworkedProjectile(Vector3 fallbackPosition, Quaternion rotation, float impulse, bool trackingInstaKill)
+        {
+            var activeWeapon = equippedWeapon as Weapon;
+            if (activeWeapon == null || activeWeapon.GetPrefabProjectile() == null) return;
+
+            Vector3 spawnPosition = fallbackPosition;
+            var attachmentManager = activeWeapon.GetAttachmentManager();
+            if (attachmentManager != null)
             {
-                case {phase: InputActionPhase.Performed}:
+                var muzzle = attachmentManager.GetEquippedMuzzle();
+                if (muzzle != null && muzzle.GetSocket() != null)
+                {
+                    spawnPosition = muzzle.GetSocket().position;
+                }
+            }
 
-                    // Only allow reload if there is ammo in magazine or reserve
-                    bool hasAmmo = equippedWeapon.GetAmmunitionCurrent() > 0 ||
-                                   (equippedWeapon is Weapon w && w.GetReserveAmmunition() > 0);
+            bool globalInstaKill = GlobalBuffManager.Instance != null && GlobalBuffManager.Instance.isInstaKillActive;
+            
+            GameObject projectileObj = Instantiate(activeWeapon.GetPrefabProjectile(), spawnPosition, rotation);
+            Projectile projectileScript = projectileObj.GetComponent<Projectile>();
+            
+            if (projectileScript != null)
+            {
+                int currentAttackerId = owner.HasValue ? (int)(ulong)owner.Value.id : 0;
+                
+                projectileScript.InitializeProjectile(GetComponent<Collider>(), currentAttackerId, globalInstaKill);
+            }
 
-                    if (hasAmmo)
-                    {
-                        PlayReloadAnimation();
-                    }
-                    else
-                    {
-                        // Optional: play empty click sound
-                        if (equippedWeapon is Weapon w2 && w2.GetAudioClipFireEmpty() != null)
-                            AudioSource.PlayClipAtPoint(w2.GetAudioClipFireEmpty(), transform.position);
-                    }
-
-                    break;
+            Rigidbody rb = projectileObj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.linearVelocity = projectileObj.transform.forward * impulse;
             }
         }
+
+        [ServerRpc]
+        private void RequestHealServer(float totalAmount, float duration)
+        {
+            if (healCoroutine != null) StopCoroutine(healCoroutine);
+            healCoroutine = StartCoroutine(GradualHeal(totalAmount, duration));
+        }
+
+        [ServerRpc]
+        private void RequestFireServer() => ObserverPlayFireEffects();
+        
+        [ObserversRpc]
+        private void ObserverPlayFireEffects()
+        {
+            // Ensure the muzzle flash triggers for external observers watching this player shoot
+            if (isOwner) return; 
+            
+            if (equippedWeapon != null)
+            {
+                var activeWeapon = equippedWeapon as Weapon;
+                if (activeWeapon != null && activeWeapon.GetAttachmentManager() != null)
+                {
+                    var muzzle = activeWeapon.GetAttachmentManager().GetEquippedMuzzle();
+                    if (muzzle != null) 
+                    {
+                        muzzle.Effect(); // Re-enables muzzle fire particles on remote clients!
+                    }
+                }
+                
+                if (equippedWeapon.GetAnimator() != null)
+                    equippedWeapon.GetAnimator().Play("Fire", 0, 0.0f);
+            }
+
+            if (characterAnimator != null)
+                characterAnimator.CrossFade("Fire", 0.05f, layerOverlay, 0);
+        }
+
+        [ServerRpc]
+        private void RequestFireEmptyServer() => ObserverPlayFireEmptyEffects();
+
+        [ObserversRpc]
+        private void ObserverPlayFireEmptyEffects()
+        {
+            if (isOwner) return;
+            if (characterAnimator != null) characterAnimator.CrossFade("Fire Empty", 0.05f, layerOverlay, 0);
+        }
+        
+        [ServerRpc]
+        private void RequestReloadServer() => ObserverPlayReloadAnimation();
+
+        [ObserversRpc]
+        private void ObserverPlayReloadAnimation() => PlayReloadAnimation();
     
         public void OnTryInspect(InputAction.CallbackContext context)
         {
-            if (!cursorLocked) return;
-            if (!CanPlayAnimationInspect()) return;
-            switch (context)
-            {
-                case {phase: InputActionPhase.Performed}:
-                    Inspect();
-                    break;
-            }
+            if (!isOwner || !cursorLocked || !CanPlayAnimationInspect() || context.phase != InputActionPhase.Performed) return;
+            Inspect();
         }
 
         public void OnTryAiming(InputAction.CallbackContext context)
         {
-            if (!cursorLocked) return;
+            if (!isOwner || !cursorLocked) return;
             switch (context.phase)
             {
                 case InputActionPhase.Started: holdingButtonAim = true; break;
@@ -436,22 +485,17 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void OnTryHolster(InputAction.CallbackContext context)
         {
-            if (!cursorLocked) return;
-            switch (context.phase)
+            if (!isOwner || !cursorLocked || context.phase != InputActionPhase.Performed) return;
+            if (CanPlayAnimationHolster())
             {
-                case InputActionPhase.Performed:
-                    if (CanPlayAnimationHolster())
-                    {
-                        SetHolstered(!holstered);
-                        holstering = true;
-                    }
-                    break;
+                SetHolstered(!holstered);
+                holstering = true;
             }
         }
 
         public void OnTryRun(InputAction.CallbackContext context)
         {
-            if (!cursorLocked) return;
+            if (!isOwner || !cursorLocked) return;
             switch (context.phase)
             {
                 case InputActionPhase.Started: holdingButtonRun = true; break;
@@ -461,36 +505,35 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void OnTryInventoryNext(InputAction.CallbackContext context)
         {
-            if (!cursorLocked) return;
-            if (inventory == null) return;
-            switch (context)
-            {
-                case {phase: InputActionPhase.Performed}:
-                    float scrollValue = context.valueType.IsEquivalentTo(typeof(Vector2)) ? Mathf.Sign(context.ReadValue<Vector2>().y) : 1.0f;
-                    int indexNext = scrollValue > 0 ? inventory.GetNextIndex() : inventory.GetLastIndex();
-                    int indexCurrent = inventory.GetEquippedIndex();
-                    if (CanChangeWeapon() && (indexCurrent != indexNext))
-                        StartCoroutine(nameof(Equip), indexNext);
-                    break;
-            }
+            if (!isOwner || !cursorLocked || inventory == null || context.phase != InputActionPhase.Performed) return;
+            float scrollValue = context.valueType.IsEquivalentTo(typeof(Vector2)) ? Mathf.Sign(context.ReadValue<Vector2>().y) : 1.0f;
+            int indexNext = scrollValue > 0 ? inventory.GetNextIndex() : inventory.GetLastIndex();
+            int indexCurrent = inventory.GetEquippedIndex();
+            if (CanChangeWeapon() && (indexCurrent != indexNext)) StartCoroutine(nameof(Equip), indexNext);
         }
 
         public void OnLockCursor(InputAction.CallbackContext context)
         {
-            switch (context)
-            {
-                case {phase: InputActionPhase.Performed}:
-                    cursorLocked = !cursorLocked;
-                    UpdateCursorState();
-                    break;
-            }
+            if (!isOwner || context.phase != InputActionPhase.Performed) return;
+            cursorLocked = !cursorLocked;
+            UpdateCursorState();
         }
 
-        public void OnMove(InputAction.CallbackContext context) => axisMovement = cursorLocked ? context.ReadValue<Vector2>() : default;
-        public void OnLook(InputAction.CallbackContext context) => axisLook = cursorLocked ? context.ReadValue<Vector2>() : default;
+        public void OnMove(InputAction.CallbackContext context)
+        {
+            if (!isOwner) return;
+            axisMovement = cursorLocked ? context.ReadValue<Vector2>() : default;
+        }
+        
+        public void OnLook(InputAction.CallbackContext context)
+        {
+            if (!isOwner) return;
+            axisLook = cursorLocked ? context.ReadValue<Vector2>() : default;
+        }
 
         public void OnUpdateTutorial(InputAction.CallbackContext context)
         {
+            if (!isOwner) return; 
             tutorialTextVisible = context switch
             {
                 {phase: InputActionPhase.Started} => true,
@@ -506,7 +549,7 @@ namespace InfimaGames.LowPolyShooterPack
         public override void EjectCasing() { if(equippedWeapon != null) equippedWeapon.EjectCasing(); }
         public override void FillAmmunition(int amount) { if(equippedWeapon != null) equippedWeapon.FillAmmunition(amount); }
         public override void SetActiveMagazine(int active) { equippedWeaponMagazine.gameObject.SetActive(active != 0); }
-        public override void AnimationEndedReload() { reloading = false; }
+        public override void AnimationEndedReload() { reloading = false; if (reloadSafetyCoroutine != null) StopCoroutine(reloadSafetyCoroutine); }
         public override void AnimationEndedInspect() { inspecting = false; }
         public override void AnimationEndedHolster() { holstering = false; }
 

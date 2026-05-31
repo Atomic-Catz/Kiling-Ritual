@@ -2,6 +2,7 @@
 
 using System.Linq;
 using UnityEngine;
+using PurrNet;
 
 namespace InfimaGames.LowPolyShooterPack
 {
@@ -59,7 +60,33 @@ namespace InfimaGames.LowPolyShooterPack
 
         protected override void Awake()
         {
-            playerCharacter = ServiceLocator.Current.Get<IGameModeService>().GetPlayerCharacter();
+            // Keep this empty
+        }
+        
+        protected override void OnSpawned()
+        {
+            base.OnSpawned();
+
+            if (isOwner)
+            {
+                playerCharacter = ServiceLocator.Current.Get<IGameModeService>().GetPlayerCharacter();
+        
+                // --- ADD THIS DEBUG LINE ---
+                if (playerCharacter == null)
+                {
+                    Debug.LogError($"[Movement] {gameObject.name} is the Owner, but playerCharacter is NULL from the Service Locator!");
+                }
+                else
+                {
+                    Debug.Log($"[Movement] {gameObject.name} successfully linked to its Character script!");
+                }
+                // ---------------------------
+            }
+            else
+            {
+                if (rigidBody == null) rigidBody = GetComponent<Rigidbody>();
+                if (rigidBody != null) rigidBody.isKinematic = true;
+            }
         }
 
         protected override void Start()
@@ -71,10 +98,22 @@ namespace InfimaGames.LowPolyShooterPack
             audioSource = GetComponent<AudioSource>();
             audioSource.clip = audioClipWalking;
             audioSource.loop = true;
+
+            // If we are NOT the owner, let the network completely dictate physics movement
+            if (!isOwner)
+            {
+                if (rigidBody != null)
+                {
+                    rigidBody.isKinematic = true; // Prevents gravity/collisions from fighting NetworkTransform
+                }
+            }
         }
 
         private void OnCollisionStay()
         {
+            // NETWORK CHECK: Non-owners shouldn't run collision ground detection
+            if (!isOwner) return;
+
             Bounds bounds = capsule.bounds;
             Vector3 extents = bounds.extents;
             float radius = extents.x - 0.01f;
@@ -93,12 +132,23 @@ namespace InfimaGames.LowPolyShooterPack
             
         protected override void FixedUpdate()
         {
+            // NETWORK CHECK
+            if (!isOwner) return;
+            
+            if (playerCharacter == null) return;
+
             MoveCharacter();
             grounded = false;
         }
 
         protected override void Update()
         {
+            // NETWORK CHECK
+            if (!isOwner) return;
+
+            // Enforce safe access to playerCharacter
+            if (playerCharacter == null) return;
+
             equippedWeapon = playerCharacter.GetInventory().GetEquipped();
             PlayFootstepSounds();
             Jump();
@@ -121,8 +171,28 @@ namespace InfimaGames.LowPolyShooterPack
         private void MoveCharacter()
         {
             Vector2 frameInput = playerCharacter.GetInputMovement();
+    
+            // --- BYPASS USING THE NEW INPUT SYSTEM HARDWARE API ---
+            if (frameInput.sqrMagnitude < 0.01f)
+            {
+                var keyboard = UnityEngine.InputSystem.Keyboard.current;
+                if (keyboard != null)
+                {
+                    if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) frameInput.y = 1f;
+                    if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) frameInput.y = -1f;
+                    if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) frameInput.x = -1f;
+                    if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) frameInput.x = 1f;
+                }
+            }
+            // -----------------------------------------------------
+
+            if (frameInput.sqrMagnitude > 0)
+            {
+                //Debug.Log($"[Movement] {gameObject.name} detected HARDWARE input: {frameInput}");
+            }
+
             var movement = new Vector3(frameInput.x, 0.0f, frameInput.y);
-            
+    
             if(playerCharacter.IsRunning())
                 movement *= speedRunning;
             else

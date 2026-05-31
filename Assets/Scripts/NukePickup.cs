@@ -1,60 +1,43 @@
 using UnityEngine;
+using PurrNet;
 
-public class NukePickup : MonoBehaviour
+namespace InfimaGames.LowPolyShooterPack
 {
-    [Header("Visual Settings")]
-    public float rotationSpeed = 90f;
-    public Color nukeColor = Color.gold;
-
-    [Header("Pickup Settings")]
-    [Tooltip("Time in seconds before the pickup disappears if not collected.")]
-    public float despawnTime = 15f;
-    
-    private Renderer rend;
-
-    private void Start()
+    public class NukePickup : NetworkBehaviour
     {
-        rend = GetComponentInChildren<Renderer>();
-        if (rend != null)
-            rend.material.color = nukeColor;
+        public float rotationSpeed = 90f;
+        public Color nukeColor = Color.gold;
+        public float despawnTime = 15f;
         
-        // Start auto-despawn timer
-        Destroy(gameObject, despawnTime);
-    }
+        private bool isCollected = false;
 
-    private void Update()
-    {
-        transform.Rotate(Vector3.up * rotationSpeed * Time.deltaTime, Space.World);
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        // Player pickup
-        if (other.CompareTag("Player"))
+        private void Awake()
         {
-            ActivateNuke();
-            Destroy(gameObject);
+            var rend = GetComponentInChildren<Renderer>();
+            if (rend != null) rend.material.color = nukeColor;
         }
-    }
 
-    private void ActivateNuke()
-    {
-        Debug.Log("NUKE ACTIVATED!");
-
-        // Find all tagged enemies
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-
-        foreach (GameObject enemyObj in enemies)
+        public void Start()
         {
-            EnemyAI enemy = enemyObj.GetComponent<EnemyAI>();
-            if (enemy == null) continue;
+            if (isServer) Destroy(gameObject, despawnTime);
+        }
 
-            // Try normal death
-            enemy.health = 0;
+        private void Update() => transform.Rotate(Vector3.up * rotationSpeed * Time.deltaTime, Space.World);
 
-            // Call private DestroyEnemy() using UnityEvent
-            enemy.SendMessage("DestroyEnemy", SendMessageOptions.DontRequireReceiver);
-            
+        private void OnTriggerEnter(Collider other)
+        {
+            if (!isServer || isCollected) return;
+
+            CharacterBehaviour cb = other.GetComponent<CharacterBehaviour>() ?? other.GetComponentInParent<CharacterBehaviour>();
+            if (cb != null)
+            {
+                isCollected = true;
+                if (GlobalBuffManager.Instance != null)
+                {
+                    GlobalBuffManager.Instance.ActivateNuke();
+                }
+                Destroy(gameObject);
+            }
         }
     }
 }

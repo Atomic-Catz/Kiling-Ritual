@@ -638,6 +638,7 @@ SkinnedMeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   serializedVersion: 2
   m_Quality: 0
   m_UpdateWhenOffscreen: 1
@@ -2315,8 +2316,7 @@ GameObject:
   - component: {fileID: 8328678243909761723}
   - component: {fileID: 1637088502831556917}
   - component: {fileID: 985984465613868681}
-  - component: {fileID: 5895744559188054421}
-  - component: {fileID: 5714120665941355296}
+  - component: {fileID: 8219212780971735570}
   m_Layer: 10
   m_Name: PlayerP
   m_TagString: Player
@@ -2500,6 +2500,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ba9a63e484e8f142b3b13cfd976e290, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _isSetup: 0
+  _prefabId: -2147483648
+  _componentIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   audioClipWalking: {fileID: 8300000, guid: 74abbbf1b1724e34b894191db38e10a0, type: 3}
   audioClipRunning: {fileID: 8300000, guid: d2add02f58e61e640aba3ae9110591cb, type: 3}
   jumpForce: 7
@@ -2517,6 +2526,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cedea47162792a74cb9ec77109d20e72, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _isSetup: 0
+  _prefabId: -2147483648
+  _componentIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   deathScreen: {fileID: 0}
   healAmount: 30
   healCooldown: 5
@@ -2804,8 +2822,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92f6bec6d490ad846b02508e753b0169, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InfimaGames.LowPolyShooterPack.CharacterHealth
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _isSetup: 0
+  _prefabId: -2147483648
+  _componentIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
   maxHealth: 100
---- !u!114 &5895744559188054421
+  currentHealth:
+    _value: 100
+    _ownerAuth: 0
+    _sendIntervalInSeconds: 0
+--- !u!114 &8219212780971735570
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2814,22 +2845,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 6386732213705425414}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b35b1f42c5a77924dbc3d1335b6e50f2, type: 3}
+  m_Script: {fileID: 11500000, guid: 817fe5016bd0a2a49a95b6eb338bb132, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::InfimaGames.LowPolyShooterPack.OneShotKillBuff
-  duration: 10
---- !u!114 &5714120665941355296
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6386732213705425414}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9332a58d8134cce419d7bfd39ef86469, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::InfimaGames.LowPolyShooterPack.TripleScoreBuff
+  m_EditorClassIdentifier: PurrNet.Runtime::PurrNet.NetworkTransform
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _isSetup: 0
+  _prefabId: -2147483648
+  _componentIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
+  _syncPosition: 1
+  _syncRotation: 1
+  _syncScale: 1
+  _syncParent: 1
+  _interpolateSettings: 7
+  _minBufferSize: 1
+  _maxBufferSize: 2
+  _characterControllerPatch: 0
+  _ownerAuth: 1
+  _interpolationTiming: 0
 --- !u!1 &6467192901043720777
 GameObject:
   m_ObjectHideFlags: 0
@@ -3450,6 +3487,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1285528001053216295}
     m_Modifications:
+    - target: {fileID: 334316701149092840, guid: 9482e0a2ae6a92742bbe72e00f29f763,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 334316701149092840, guid: 9482e0a2ae6a92742bbe72e00f29f763,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 334316701149092840, guid: 9482e0a2ae6a92742bbe72e00f29f763,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2480563158121336328, guid: 9482e0a2ae6a92742bbe72e00f29f763,
         type: 3}
       propertyPath: m_LocalPosition.x

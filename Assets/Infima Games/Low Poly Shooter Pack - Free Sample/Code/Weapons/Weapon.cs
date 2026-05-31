@@ -120,45 +120,19 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region FIELDS
 
-        /// <summary>
-        /// Weapon Animator.
-        /// </summary>
         private Animator animator;
-        /// <summary>
-        /// Attachment Manager.
-        /// </summary>
         private WeaponAttachmentManagerBehaviour attachmentManager;
-
-        /// <summary>
-        /// Amount of ammunition left (current magazine).
-        /// </summary>
         private int ammunitionCurrent;
 
         #region Attachment Behaviours
 
-        /// <summary>
-        /// Equipped Magazine Reference.
-        /// </summary>
         private MagazineBehaviour magazineBehaviour;
-        /// <summary>
-        /// Equipped Muzzle Reference.
-        /// </summary>
         private MuzzleBehaviour muzzleBehaviour;
 
         #endregion
 
-        /// <summary>
-        /// The GameModeService used in this game!
-        /// </summary>
         private IGameModeService gameModeService;
-        /// <summary>
-        /// The main player character behaviour component.
-        /// </summary>
         private CharacterBehaviour characterBehaviour;
-
-        /// <summary>
-        /// The player character's camera.
-        /// </summary>
         private Transform playerCamera;
 
         // Reload state
@@ -171,12 +145,9 @@ namespace InfimaGames.LowPolyShooterPack
 
         protected override void Awake()
         {
-            // 1. Core References
             animator = GetComponent<Animator>();
             attachmentManager = GetComponent<WeaponAttachmentManagerBehaviour>();
 
-            // 2. IMMEDIATE ATTACHMENT SETUP
-            // This prevents the UI from hitting a Null Magazine
             if (attachmentManager != null)
             {
                 magazineBehaviour = attachmentManager.GetEquippedMagazine();
@@ -186,27 +157,38 @@ namespace InfimaGames.LowPolyShooterPack
                     ammunitionCurrent = magazineBehaviour.GetAmmunitionTotal();
             }
 
-            // 3. Service Locators
             gameModeService = ServiceLocator.Current.Get<IGameModeService>();
-            characterBehaviour = gameModeService.GetPlayerCharacter();
-            playerCamera = characterBehaviour.GetCameraWorld().transform;
+            if (gameModeService != null)
+            {
+                characterBehaviour = gameModeService.GetPlayerCharacter();
+                if (characterBehaviour != null && characterBehaviour.GetCameraWorld() != null)
+                    playerCamera = characterBehaviour.GetCameraWorld().transform;
+            }
         }
+
         protected override void Start()
         {
-            #region Cache Attachment References
-
-            //Get Magazine.
             magazineBehaviour = attachmentManager.GetEquippedMagazine();
-            //Get Muzzle.
             muzzleBehaviour = attachmentManager.GetEquippedMuzzle();
 
-            #endregion
-
-            //Max Out Ammo (start full in magazine).
             ammunitionCurrent = magazineBehaviour.GetAmmunitionTotal();
-
-            // Ensure sensible ammoApplyTime bounds
             ammoApplyTime = Mathf.Clamp(ammoApplyTime, 0f, reloadDuration);
+
+            Character parentCharacter = GetComponentInParent<Character>();
+            if (parentCharacter != null)
+            {
+                SetupNetworkOwner(parentCharacter, parentCharacter.GetCameraWorld().transform);
+            }
+        }
+
+        #endregion
+
+        #region MULTIPLAYER SPECIFIC SETUP
+
+        public void SetupNetworkOwner(CharacterBehaviour owner, Transform ownerCamera)
+        {
+            characterBehaviour = owner;
+            playerCamera = ownerCamera;
         }
 
         #endregion
@@ -214,53 +196,34 @@ namespace InfimaGames.LowPolyShooterPack
         #region GETTERS
 
         public override Animator GetAnimator() => animator;
-
         public override Sprite GetSpriteBody() => spriteBody;
-
         public override AudioClip GetAudioClipHolster() => audioClipHolster;
         public override AudioClip GetAudioClipUnholster() => audioClipUnholster;
-
         public override AudioClip GetAudioClipReload() => audioClipReload;
         public override AudioClip GetAudioClipReloadEmpty() => audioClipReloadEmpty;
-
         public override AudioClip GetAudioClipFireEmpty() => audioClipFireEmpty;
-
         public override AudioClip GetAudioClipFire() => muzzleBehaviour.GetAudioClipFire();
-
         public override int GetAmmunitionCurrent() => ammunitionCurrent;
-
         public override int GetAmmunitionTotal() => magazineBehaviour.GetAmmunitionTotal();
-
         public int GetReserveAmmunition() => reserveAmmunition;
-
         public override bool IsAutomatic() => automatic;
         public override float GetRateOfFire() => roundsPerMinutes;
-
         public override bool IsFull() => ammunitionCurrent == magazineBehaviour.GetAmmunitionTotal();
         public override bool HasAmmunition() => ammunitionCurrent > 0;
-
-        public bool IsReserveFull()
-        {
-            return reserveAmmunition >= reserveAmmunitionMax;
-        }
-
+        public bool IsReserveFull() => reserveAmmunition >= reserveAmmunitionMax;
         public override RuntimeAnimatorController GetAnimatorController() => controller;
         public override WeaponAttachmentManagerBehaviour GetAttachmentManager() => attachmentManager;
-        
         public int GetReserveAmmunitionMax() => reserveAmmunitionMax;
+        public GameObject GetPrefabProjectile() => prefabProjectile;
         
         #endregion
 
         #region METHODS
 
-
         public bool TryStartReload()
         {
-            if (isReloading)
-                return false;
-
-            if (ammunitionCurrent >= magazineBehaviour.GetAmmunitionTotal())
-                return false;
+            if (isReloading) return false;
+            if (ammunitionCurrent >= magazineBehaviour.GetAmmunitionTotal()) return false;
 
             if (reserveAmmunition <= 0)
             {
@@ -278,8 +241,7 @@ namespace InfimaGames.LowPolyShooterPack
 
         public bool CancelReload()
         {
-            if (!isReloading || !allowReloadInterrupt)
-                return false;
+            if (!isReloading || !allowReloadInterrupt) return false;
 
             if (reloadCoroutine != null)
             {
@@ -295,7 +257,6 @@ namespace InfimaGames.LowPolyShooterPack
         {
             isReloading = true;
 
-            // Wait until the moment ammo should be applied (animation sync)
             float elapsed = 0f;
             while (elapsed < ammoApplyTime)
             {
@@ -303,7 +264,6 @@ namespace InfimaGames.LowPolyShooterPack
                 yield return null;
             }
 
-            // Only transfer ammo if reserve > 0
             if (reserveAmmunition > 0)
             {
                 int magTotal = magazineBehaviour.GetAmmunitionTotal();
@@ -313,7 +273,6 @@ namespace InfimaGames.LowPolyShooterPack
                 ammunitionCurrent += taking;
             }
 
-            // Wait remaining reload time
             float remaining = Mathf.Max(0f, reloadDuration - ammoApplyTime);
             elapsed = 0f;
             while (elapsed < remaining)
@@ -328,14 +287,8 @@ namespace InfimaGames.LowPolyShooterPack
 
         public override void Reload()
         {
-            // TryStartReload returns true only if reload actually starts
-            if (TryStartReload())
-            {
-                // Reload animation and coroutine are already triggered inside TryStartReload
-                return;
-            }
+            if (TryStartReload()) return;
 
-            // Optional: play empty click sound if no ammo at all
             if (ammunitionCurrent == 0 && reserveAmmunition == 0 && audioClipFireEmpty != null)
             {
                 AudioSource.PlayClipAtPoint(audioClipFireEmpty, transform.position);
@@ -344,18 +297,8 @@ namespace InfimaGames.LowPolyShooterPack
 
         public override void Fire(float spreadMultiplier = 1.0f)
         {
-            if (isReloading)
-                return;
+            if (isReloading || muzzleBehaviour == null || playerCamera == null) return;
 
-            //We need a muzzle in order to fire this weapon!
-            if (muzzleBehaviour == null)
-                return;
-
-            //Make sure that we have a camera cached, otherwise we don't really have the ability to perform traces.
-            if (playerCamera == null)
-                return;
-
-            //If no ammo, optionally start reload and return
             if (ammunitionCurrent <= 0)
             {
                 if (autoReloadOnEmpty && reserveAmmunition > 0)
@@ -363,52 +306,44 @@ namespace InfimaGames.LowPolyShooterPack
                 return;
             }
 
-            //Get Muzzle Socket. This is the point we fire from.
             Transform muzzleSocket = muzzleBehaviour.GetSocket();
 
-            //Play the firing animation.
+            // Local Visuals Feedback
             const string stateName = "Fire";
-            animator.Play(stateName, 0, 0.0f);
-            //Reduce ammunition! We just shot, so we need to get rid of one!
+            if (animator != null) animator.Play(stateName, 0, 0.0f);
+            
             ammunitionCurrent = Mathf.Clamp(ammunitionCurrent - 1, 0, magazineBehaviour.GetAmmunitionTotal());
-
-            //Play all muzzle effects.
+            
+            // Runs local particle systems and flashlights
             muzzleBehaviour.Effect();
 
-            //Determine the rotation that we want to shoot our projectile in.
             Quaternion rotation = Quaternion.LookRotation(playerCamera.forward * 1000.0f - muzzleSocket.position);
 
-            //If there's something blocking, then we can aim directly at that thing, which will result in more accurate shooting.
             if (Physics.Raycast(new Ray(playerCamera.position, playerCamera.forward),
                 out RaycastHit hit, maximumDistance, mask))
-                rotation = Quaternion.LookRotation(hit.point - muzzleSocket.position);
-
-            //Spawn projectile from the projectile spawn point.
-            GameObject projectile = Instantiate(prefabProjectile, muzzleSocket.position, rotation);
-            // For OneShot Buff
-            if (characterBehaviour != null)
             {
-                OneShotKillBuff buff = characterBehaviour.gameObject.GetComponent<OneShotKillBuff>();
-                if (buff == null)
-                    buff = characterBehaviour.gameObject.GetComponentInChildren<OneShotKillBuff>();
-
-                if (buff != null && buff.IsActive)
-                {
-                    Projectile projScript = projectile.GetComponent<Projectile>();
-                    if (projScript != null)
-                        projScript.instaKill = true;
-                }
+                rotation = Quaternion.LookRotation(hit.point - muzzleSocket.position);
             }
 
-            projectile.GetComponent<Rigidbody>().linearVelocity = projectile.transform.forward * projectileImpulse;
+            bool trackingInstaKill = false;
+            if (characterBehaviour != null)
+            {
+                OneShotKillBuff buff = characterBehaviour.gameObject.GetComponent<OneShotKillBuff>() ?? 
+                                      characterBehaviour.gameObject.GetComponentInChildren<OneShotKillBuff>();
+                if (buff != null && buff.IsActive) trackingInstaKill = true;
+            }
+
+            // FIXED: Only trigger network spawn if this weapon belongs to the local window owner
+            var networkCharacter = characterBehaviour as Character;
+            if (networkCharacter != null && networkCharacter.isOwner)
+            {
+                networkCharacter.CmdSpawnNetworkedProjectile(muzzleSocket.position, rotation, projectileImpulse, trackingInstaKill);
+            }
         }
 
         public override void FillAmmunition(int amount)
         {
-            // Only refill from actual reserve ammo
-            if (amount == 0)
-                return; // Do nothing if no amount provided
-
+            if (amount == 0) return;
             ammunitionCurrent = Mathf.Clamp(ammunitionCurrent + amount, 0, GetAmmunitionTotal());
         }
 
@@ -419,7 +354,6 @@ namespace InfimaGames.LowPolyShooterPack
 
         public override void EjectCasing()
         {
-            //Spawn casing prefab at spawn point.
             if (prefabCasing != null && socketEjection != null)
                 Instantiate(prefabCasing, socketEjection.position, socketEjection.rotation);
         }

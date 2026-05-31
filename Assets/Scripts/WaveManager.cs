@@ -1,98 +1,137 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using PurrNet; // IMPORT PURRNET CORE
 
-public class WaveManager : MonoBehaviour
+namespace InfimaGames.LowPolyShooterPack
 {
-    [Header("Boss Settings")] 
-    public GameObject bossPrefab;
-    // We can decide how many spawners should spawn a boss
-    public int bossesPerWave = 1; 
-    
-    [Header("Trader Settings")]
-    public GameObject traderPrefab;
-    public Transform traderSpawnPoint;
-    private GameObject activeTrader;
-    
-    [Header("Spawners")]
-    public EnemySpawner[] spawners;
-
-    [Header("Zombies Scaling (CoD Style)")]
-    public float breakDuration = 15f; 
-    public int baseEnemyCount = 6;
-    public float countMultiplier = 1.15f;
-    public float healthMultiplier = 1.1f;
-
-    private int currentWave = 0;
-
-    private void Awake()
+    public class WaveManager : NetworkBehaviour
     {
-        if (spawners == null || spawners.Length == 0)
-            spawners = FindObjectsOfType<EnemySpawner>();
-    }
+        [Header("Intro Delay Settings")]
+        [SerializeField] private float gameStartDelay = 10f; // CoD Zombies style intro countdown
 
-    private void Start()
-    {
-        StartCoroutine(WaveRoutine());
-    }
+        [Header("Boss Settings")] 
+        public GameObject bossPrefab;
+        public int bossesPerWave = 1; 
+        
+        [Header("Trader Settings")]
+        public GameObject traderPrefab;
+        public Transform traderSpawnPoint;
+        private GameObject activeTrader;
+        
+        [Header("Spawners")]
+        public EnemySpawner[] spawners;
 
-    private IEnumerator WaveRoutine()
-    {
-        while (true)
+        [Header("Zombies Scaling (CoD Style)")]
+        public float breakDuration = 15f; 
+        public int baseEnemyCount = 6;
+        public float countMultiplier = 1.15f;
+        public float healthMultiplier = 1.1f;
+
+        private int currentWave = 0;
+        private bool loopInitialized = false;
+
+        private void Awake()
         {
-            currentWave++;
-            // Check if this is a multiple of 5
-            bool isBossWave = (currentWave % 5 == 0);
-            
-            int totalEnemiesForWave = Mathf.RoundToInt(baseEnemyCount * Mathf.Pow(countMultiplier, currentWave - 1)) + (currentWave * 2);
-            float currentHealthBoost = Mathf.Pow(healthMultiplier, Mathf.Min(currentWave, 20) - 1);
+            if (spawners == null || spawners.Length == 0)
+                spawners = FindObjectsOfType<EnemySpawner>();
+        }
 
-            Debug.Log($"<color=red>Wave {currentWave} Started!</color> {(isBossWave ? "<b>BOSS WAVE!</b>" : "")}");
+        private void Update()
+        {
+            // CRITICAL NETWORK GUARD: The Wave loop management runs ONLY on the Server/Host window
+            if (!isServer) return;
 
-            // Distribute regular enemies
-            int enemiesPerSpawner = totalEnemiesForWave / spawners.Length;
-
-            // We only want the boss to spawn once, so we'll pick the first spawner to handle it
-            for (int i = 0; i < spawners.Length; i++)
+            // Don't kick off anything until a player is verified in the network space
+            if (!loopInitialized)
             {
-                if (spawners[i] != null)
+                // Look for any active instantiated instances of our character
+                Character localPlayer = FindObjectOfType<Character>();
+                if (localPlayer != null)
                 {
-                    // If it's a boss wave, give the bossPrefab to the first spawner (index 0)
-                    GameObject bossToSpawn = (isBossWave && i == 0) ? bossPrefab : null;
-                    
-                    // We need to update the StartWave call in EnemySpawner to accept this!
-                    spawners[i].StartWave(enemiesPerSpawner, currentHealthBoost, bossToSpawn);
+                    loopInitialized = true;
+                    StartCoroutine(InitialStartAndWaveRoutine());
                 }
             }
+        }
 
-            // Wait until all spawners report 0 active enemies
-            bool allClear = false;
-            while (!allClear)
+        private IEnumerator InitialStartAndWaveRoutine()
+        {
+            Debug.Log($"[WaveManager] Player detected! Spawning round loop will begin in {gameStartDelay} seconds...");
+            
+            // CoD Intro Delay
+            yield return new WaitForSeconds(gameStartDelay);
+
+            while (true)
             {
-                allClear = true;
-                foreach (var spawner in spawners)
+                currentWave++;
+                bool isBossWave = (currentWave % 5 == 0);
+                
+                int totalEnemiesForWave = Mathf.RoundToInt(baseEnemyCount * Mathf.Pow(countMultiplier, currentWave - 1)) + (currentWave * 2);
+                float currentHealthBoost = Mathf.Pow(healthMultiplier, Mathf.Min(currentWave, 20) - 1);
+
+                Debug.Log($"<color=red>Network Wave {currentWave} Started!</color> {(isBossWave ? "<b>BOSS WAVE!</b>" : "")}");
+
+                // Update UI on all players
+                SyncWaveNumberToClients(currentWave);
+
+                int enemiesPerSpawner = totalEnemiesForWave / spawners.Length;
+
+                for (int i = 0; i < spawners.Length; i++)
                 {
-                    if (spawner != null && (spawner.HasActiveEnemies || spawner.IsSpawning))
+                    if (spawners[i] != null)
                     {
-                        allClear = false;
-                        break;
+                        GameObject bossToSpawn = (isBossWave && i == 0) ? bossPrefab : null;
+                        spawners[i].StartWave(enemiesPerSpawner, currentHealthBoost, bossToSpawn);
                     }
                 }
-                yield return new WaitForSeconds(1.0f);
-            }
 
-            Debug.Log($"Wave {currentWave} Clear. Break Time!");
-            SpawnTrader();
-            yield return new WaitForSeconds(breakDuration);
-            DespawnTrader();
+                // Wait until all spawners report 0 active enemies
+                bool allClear = false;
+                while (!allClear)
+                {
+                    allClear = true;
+                    foreach (var spawner in spawners)
+                    {
+                        if (spawner != null && (spawner.HasActiveEnemies || spawner.IsSpawning))
+                        {
+                            allClear = false;
+                            break;
+                        }
+                    }
+                    yield return new WaitForSeconds(1.0f);
+                }
+
+                Debug.Log($"Wave {currentWave} Clear. Break Time!");
+                SpawnTrader();
+                yield return new WaitForSeconds(breakDuration);
+                DespawnTrader();
+            }
+        }
+        
+        private void SpawnTrader()
+        {
+            if (traderPrefab && traderSpawnPoint && !activeTrader)
+            {
+                // PurrNet automatically intercepts standard Instantiate and spawns it globally
+                activeTrader = Instantiate(traderPrefab, traderSpawnPoint.position, traderSpawnPoint.rotation);
+            }
+        }
+
+        private void DespawnTrader() 
+        { 
+            if (activeTrader) 
+            { 
+                // PurrNet automatically intercepts standard Destroy and despawns it globally
+                Destroy(activeTrader);
+                activeTrader = null; 
+            } 
+        }
+
+        [ObserversRpc]
+        private void SyncWaveNumberToClients(int waveNumber)
+        {
+            Debug.Log($"[Client UI] Current Game Round Updated to: {waveNumber}");
         }
     }
-    
-    private void SpawnTrader()
-    {
-        if (traderPrefab && traderSpawnPoint && !activeTrader)
-            activeTrader = Instantiate(traderPrefab, traderSpawnPoint.position, traderSpawnPoint.rotation);
-    }
-
-    private void DespawnTrader() { if (activeTrader) { Destroy(activeTrader); activeTrader = null; } }
 }

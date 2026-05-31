@@ -1,13 +1,16 @@
 using UnityEngine;
 using System;
+using PurrNet; // IMPORT PURRNET CORE
 
 namespace InfimaGames.LowPolyShooterPack
 {
-    public class CharacterHealth : MonoBehaviour
+    public class CharacterHealth : NetworkBehaviour
     {
         [Header("Health Settings")]
         [SerializeField] private float maxHealth = 100f;
-        private float currentHealth;
+        
+        // FIX: PurrNet uses SyncVar<T> instead of NetworkSync<T>
+        [SerializeField] private SyncVar<float> currentHealth = new SyncVar<float>(100f);
 
         public event Action OnDeath;
         private bool isDead = false;
@@ -16,47 +19,63 @@ namespace InfimaGames.LowPolyShooterPack
 
         private void Awake()
         {
-            currentHealth = maxHealth;
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+            // Registering to the event remains exactly the same
+            currentHealth.onChanged += OnHealthSyncChanged;
         }
 
-        public void TakeDamage(float amount)
+        private void Start()
         {
-            if (isDead) return; // Already dead, ignore damage
-            if (amount <= 0) return;
+            // Only the local player who OWNS this character needs to listen to the UI Death Menu popups
+            if (isOwner)
+            {
+                OnDeath += HandleDeath;
+            }
+            
+            // Initialize health values on startup
+            if (isServer)
+            {
+                currentHealth.value = maxHealth;
+            }
+            
+            // Trigger initial UI update frame
+            OnHealthChanged?.Invoke(currentHealth.value, maxHealth);
+        }
 
-            currentHealth -= amount;
-            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        /// <summary>
+        /// Automatically called by PurrNet whenever health updates on the network
+        /// </summary>
+        private void OnHealthSyncChanged(float newHealth)
+        {
+            OnHealthChanged?.Invoke(newHealth, maxHealth);
 
-            Debug.Log($"[CharacterHealth] {gameObject.name} took {amount} damage. Current health: {currentHealth}");
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
-            if (currentHealth <= 0f)
+            if (newHealth <= 0f && !isDead)
             {
                 Die();
             }
         }
 
-        public void Heal(float amount)
+        public void TakeDamage(float amount)
         {
-            if (isDead) return; // Can't heal a dead character
+            // CRITICAL GUARD: Only the server is allowed to process actual damage changes
+            if (!isServer || isDead) return; 
             if (amount <= 0) return;
 
-            float before = currentHealth;
+            currentHealth.value -= amount;
+            currentHealth.value = Mathf.Clamp(currentHealth.value, 0, maxHealth);
 
-            currentHealth += amount;
-            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-
-            Debug.Log($"[CharacterHealth] Healed {amount}. Health: {before} -> {currentHealth}");
-
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+            Debug.Log($"[Server Health] {gameObject.name} took {amount} damage. Current health: {currentHealth.value}");
         }
 
-        private void Start()
+        public void Heal(float amount)
         {
-            var health = GetComponent<CharacterHealth>();
-            if (health != null)
-                health.OnDeath += HandleDeath;
+            // Healing must also be modified on the server authority layer
+            if (!isServer || isDead) return; 
+            if (amount <= 0) return;
+
+            currentHealth.value += amount;
+            currentHealth.value = Mathf.Clamp(currentHealth.value, 0, maxHealth);
+
+            Debug.Log($"[Server Health] Healed {amount}. Health: {currentHealth.value}");
         }
 
         private void HandleDeath()
@@ -64,16 +83,15 @@ namespace InfimaGames.LowPolyShooterPack
             FindObjectOfType<DeathMenu>()?.Show();
         }
 
-
-        public float GetCurrentHealth() => currentHealth;
+        public float GetCurrentHealth() => currentHealth.value;
         public float GetMaxHealth() => maxHealth;
 
         private void Die()
         {
-            if (isDead) return; // Prevent multiple calls
+            if (isDead) return; 
             isDead = true;
 
-            Debug.Log("[CharacterHealth] Character died!");
+            Debug.Log($"[CharacterHealth] {gameObject.name} died!");
 
             OnDeath?.Invoke();
         }

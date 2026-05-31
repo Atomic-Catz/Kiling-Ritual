@@ -1,5 +1,5 @@
 ﻿// Copyright 2021, Infima Games. All Rights Reserved.
-
+using PurrNet;
 using UnityEngine;
 
 namespace InfimaGames.LowPolyShooterPack
@@ -7,7 +7,7 @@ namespace InfimaGames.LowPolyShooterPack
     /// <summary>
     /// Character Abstract Behaviour.
     /// </summary>
-    public abstract class CharacterBehaviour : MonoBehaviour
+    public abstract class CharacterBehaviour : NetworkBehaviour
     {
         #region UNITY
 

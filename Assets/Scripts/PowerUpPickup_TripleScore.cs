@@ -1,34 +1,29 @@
 using UnityEngine;
+using PurrNet;
 
 namespace InfimaGames.LowPolyShooterPack
 {
-    public class PowerUpPickup_TripleScore : MonoBehaviour
+    public class PowerUpPickup_TripleScore : NetworkBehaviour
     {
-        [Header("Visual")]
         public float floatAmplitude = 0.25f;
         public float floatSpeed = 1.0f;
         public float rotationSpeed = 60f;
-
-        [Header("Pickup")]
-        [Tooltip("If you tag the player in the scene, set it here. Leave empty to skip tag check.")]
-        public string playerTag = "Player";
-
-        [Tooltip("How long the triple-score buff lasts (seconds)")]
-        public float buffDuration = 5f;
-
-        [Tooltip("Time in seconds before the pickup disappears if not collected.")]
+        public float buffDuration = 30f;
         public float despawnTime = 15f;
         
-        Vector3 startPos;
+        private Vector3 startPos;
+        private bool isCollected = false;
 
         void Awake()
         {
             startPos = transform.position;
             var rend = GetComponent<Renderer>();
             if (rend != null) rend.material.color = Color.green;
-            
-            // Start auto-despawn timer
-            Destroy(gameObject, despawnTime);
+        }
+
+        public void Start()
+        {
+            if (isServer) Destroy(gameObject, despawnTime);
         }
 
         void Update()
@@ -39,26 +34,16 @@ namespace InfimaGames.LowPolyShooterPack
 
         void OnTriggerEnter(Collider other)
         {
-            if (!string.IsNullOrEmpty(playerTag) && other.gameObject.tag != playerTag)
-                return;
+            if (!isServer || isCollected) return;
 
-            TripleScoreBuff buff = other.GetComponent<TripleScoreBuff>() ?? other.GetComponentInParent<TripleScoreBuff>();
-            if (buff == null)
+            CharacterBehaviour cb = other.GetComponent<CharacterBehaviour>() ?? other.GetComponentInParent<CharacterBehaviour>();
+            if (cb != null)
             {
-                CharacterBehaviour cb = other.GetComponent<CharacterBehaviour>() ?? other.GetComponentInParent<CharacterBehaviour>();
-                if (cb != null)
+                isCollected = true;
+                if (GlobalBuffManager.Instance != null)
                 {
-                    buff = cb.gameObject.AddComponent<TripleScoreBuff>();
+                    GlobalBuffManager.Instance.ActivateTripleScore(buffDuration);
                 }
-                else
-                {
-                    buff = other.gameObject.AddComponent<TripleScoreBuff>();
-                }
-            }
-
-            if (buff != null)
-            {
-                buff.Grant(buffDuration);
                 Destroy(gameObject);
             }
         }

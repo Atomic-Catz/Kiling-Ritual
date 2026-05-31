@@ -66,10 +66,7 @@ namespace InfimaGames.LowPolyShooterPack
         #endregion
 
         #region UNITY FUNCTIONS
-
-        /// <summary>
-        /// Awake.
-        /// </summary>
+        
         private void Awake()
         {
             //Null Check.

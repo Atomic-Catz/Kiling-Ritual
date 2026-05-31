@@ -1,5 +1,6 @@
 ﻿// Copyright 2021, Infima Games. All Rights Reserved.
 
+using PurrNet;
 using UnityEngine;
 
 namespace InfimaGames.LowPolyShooterPack
@@ -7,7 +8,7 @@ namespace InfimaGames.LowPolyShooterPack
     /// <summary>
     /// Abstract movement class. Handles interactions with the main movement component.
     /// </summary>
-    public abstract class MovementBehaviour : MonoBehaviour
+    public abstract class MovementBehaviour : NetworkBehaviour
     {
         #region UNITY
 

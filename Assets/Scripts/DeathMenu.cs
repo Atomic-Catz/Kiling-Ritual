@@ -21,7 +21,7 @@ public class DeathMenu : MonoBehaviour
         isShown = true;
 
         deathMenuUI.SetActive(true);
-        Time.timeScale = 0f;
+        //Time.timeScale = 0f;
 
         // Disable player control
         if (player != null)
@@ -43,7 +43,7 @@ public class DeathMenu : MonoBehaviour
 
     public void Retry()
     {
-        Time.timeScale = 1f;
+        //Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 

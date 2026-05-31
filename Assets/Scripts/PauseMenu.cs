@@ -30,7 +30,7 @@ public class PauseMenu : MonoBehaviour
     public void Resume()
     {
         pauseMenuUI.SetActive(false);
-        Time.timeScale = 1f;
+        //Time.timeScale = 1f;
         GameIsPaused = false;
         
         player.GetComponent<AudioSource>().enabled = true;
@@ -44,9 +44,9 @@ public class PauseMenu : MonoBehaviour
     void Pause()
     {
         pauseMenuUI.SetActive(true);
-        Time.timeScale = 0f;
+        //Time.timeScale = 0f;
         GameIsPaused = true;
-
+        
         player.GetComponent<AudioSource>().enabled = false;
         player.GetComponentInChildren<CameraLook>().enabled = false;
         player.GetComponent<Movement>().enabled = false;
@@ -57,7 +57,7 @@ public class PauseMenu : MonoBehaviour
 
     public void LoadMenu()
     {
-        Time.timeScale = 1f;
+        //Time.timeScale = 1f;
         SceneManager.LoadScene("MainMenu");
     }
 }

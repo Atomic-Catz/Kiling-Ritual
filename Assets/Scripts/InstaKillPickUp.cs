@@ -1,50 +1,44 @@
 using UnityEngine;
+using PurrNet;
 
 namespace InfimaGames.LowPolyShooterPack
 {
     [RequireComponent(typeof(Renderer))]
-    public class InstaKillPickup : MonoBehaviour
+    public class InstaKillPickup : NetworkBehaviour
     {
-        [Tooltip("Duration in seconds the buff lasts when picked up.")]
-        public float buffDuration = 10f;
-
-        [Header("Visuals")]
-        [Tooltip("Rotation speed in degrees per second.")]
-        public Vector3 rotationSpeed = new Vector3(0f, 180f, 0f); // spins around Y axis
-        [Tooltip("Color of the pickup.")]
+        public float buffDuration = 30f;
+        public Vector3 rotationSpeed = new Vector3(0f, 180f, 0f);
         public Color pickupColor = Color.red;
-
-        [Header("Pickup Settings")]
-        [Tooltip("Time in seconds before the pickup disappears if not collected.")]
         public float despawnTime = 15f;
-        
-        private Renderer objectRenderer;
+
+        private bool isCollected = false;
 
         private void Awake()
         {
-            objectRenderer = GetComponent<Renderer>();
-            if (objectRenderer != null)
-            {
-                objectRenderer.material.color = pickupColor;
-            }
-            
-            // Start auto-despawn timer
-            Destroy(gameObject, despawnTime);
+            Renderer objectRenderer = GetComponent<Renderer>();
+            if (objectRenderer != null) objectRenderer.material.color = pickupColor;
         }
 
-        private void Update()
+        public void Start()
         {
-            // Spin the pickup
-            transform.Rotate(rotationSpeed * Time.deltaTime);
+            // Only the server manages despawning to prevent network desyncs
+            if (isServer) Destroy(gameObject, despawnTime);
         }
+
+        private void Update() => transform.Rotate(rotationSpeed * Time.deltaTime);
 
         private void OnTriggerEnter(Collider other)
         {
-            OneShotKillBuff buff = other.GetComponent<OneShotKillBuff>();
-            if (buff != null)
+            if (!isServer || isCollected) return;
+
+            CharacterBehaviour cb = other.GetComponent<CharacterBehaviour>() ?? other.GetComponentInParent<CharacterBehaviour>();
+            if (cb != null)
             {
-                buff.duration = buffDuration;
-                buff.Activate();
+                isCollected = true;
+                if (GlobalBuffManager.Instance != null)
+                {
+                    GlobalBuffManager.Instance.ActivateInstaKill(buffDuration);
+                }
                 Destroy(gameObject);
             }
         }

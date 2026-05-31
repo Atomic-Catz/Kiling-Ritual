@@ -5,7 +5,7 @@ using UnityEngine;
 namespace InfimaGames.LowPolyShooterPack.Interface
 {
     /// <summary>
-    /// Interface Element.
+    /// Interface Element. Refactored to handle network dependency injection.
     /// </summary>
     public abstract class Element : MonoBehaviour
     {
@@ -32,6 +32,15 @@ namespace InfimaGames.LowPolyShooterPack.Interface
         
         #endregion
 
+        #region PROPERTIES
+
+        /// <summary>
+        /// Prevents Awake lookup if the CanvasSpawner has injected a specific character reference.
+        /// </summary>
+        private bool hasExplicitOwner;
+
+        #endregion
+
         #region UNITY
 
         /// <summary>
@@ -39,13 +48,21 @@ namespace InfimaGames.LowPolyShooterPack.Interface
         /// </summary>
         protected virtual void Awake()
         {
-            //Get Game Mode Service. Very useful to get Game Mode references.
+            // If a network spawner already manually initialized this element, skip the global lookup.
+            if (hasExplicitOwner) return;
+
+            // Get Game Mode Service. Very useful to get Game Mode references.
             gameModeService = ServiceLocator.Current.Get<IGameModeService>();
             
-            //Get Player Character.
-            playerCharacter = gameModeService.GetPlayerCharacter();
-            //Get Player Character Inventory.
-            playerCharacterInventory = playerCharacter.GetInventory();
+            // Get Player Character fallback.
+            if (gameModeService != null)
+            {
+                playerCharacter = gameModeService.GetPlayerCharacter();
+                if (playerCharacter != null)
+                {
+                    playerCharacterInventory = playerCharacter.GetInventory();
+                }
+            }
         }
         
         /// <summary>
@@ -53,20 +70,41 @@ namespace InfimaGames.LowPolyShooterPack.Interface
         /// </summary>
         private void Update()
         {
-            //Ignore if we don't have an Inventory.
-            if (Equals(playerCharacterInventory, null))
+            // Update inventory reference dynamically if it's currently missing but we have a character
+            if (playerCharacterInventory == null && playerCharacter != null)
+            {
+                playerCharacterInventory = playerCharacter.GetInventory();
+            }
+
+            // Ignore if we don't have an Inventory.
+            if (playerCharacterInventory == null)
                 return;
 
-            //Get Equipped Weapon.
+            // Get Equipped Weapon.
             equippedWeapon = playerCharacterInventory.GetEquipped();
             
-            //Tick.
+            // Tick child script logic (text fields, crosshairs, images, etc.)
             Tick();
         }
 
         #endregion
 
         #region METHODS
+
+        /// <summary>
+        /// Explicit network initialization. Forces this UI element to read data 
+        /// from the specific local character machine instead of using a global lookup.
+        /// </summary>
+        public void SetupNetworkPlayer(CharacterBehaviour localOwner)
+        {
+            hasExplicitOwner = true;
+            playerCharacter = localOwner;
+            
+            if (playerCharacter != null)
+            {
+                playerCharacterInventory = playerCharacter.GetInventory();
+            }
+        }
 
         /// <summary>
         /// Tick.

@@ -1,36 +1,29 @@
 using UnityEngine;
+using PurrNet;
 
 namespace InfimaGames.LowPolyShooterPack
 {
-    public class PowerUpPickup_Camo : MonoBehaviour
+    public class PowerUpPickup_Camo : NetworkBehaviour
     {
-        [Header("Visual")]
         public float floatAmplitude = 0.25f;
         public float floatSpeed = 1.0f;
         public float rotationSpeed = 60f;
-
-        [Header("Pickup")]
-        public string playerTag = "Player";
-        public float buffDuration = 5f;
-        
-        [Header("Pickup Settings")]
-        [Tooltip("Seconds before the pickup disappears if not collected.")]
+        public float buffDuration = 10f; 
         public float despawnTime = 15f;
-
-        Vector3 startPos;
+        
+        private Vector3 startPos;
+        private bool isCollected = false;
 
         void Awake()
         {
             startPos = transform.position;
             var rend = GetComponent<Renderer>();
-            if (rend != null)
-            {
-                rend.material.color = Color.purple;
-            }
-            
-            // Auto-despawn
-            Destroy(gameObject, despawnTime);
-            
+            if (rend != null) rend.material.color = Color.purple;
+        }
+
+        private void Start()
+        {
+            if (isServer) Destroy(gameObject, despawnTime);
         }
 
         void Update()
@@ -41,22 +34,16 @@ namespace InfimaGames.LowPolyShooterPack
 
         void OnTriggerEnter(Collider other)
         {
-            if (!string.IsNullOrEmpty(playerTag) && other.gameObject.tag != playerTag)
-                return;
+            if (!isServer || isCollected) return;
 
-            CamoBuff buff = other.GetComponent<CamoBuff>() ?? other.GetComponentInParent<CamoBuff>();
-            if (buff == null)
+            CharacterBehaviour cb = other.GetComponent<CharacterBehaviour>() ?? other.GetComponentInParent<CharacterBehaviour>();
+            if (cb != null)
             {
-                CharacterBehaviour cb = other.GetComponent<CharacterBehaviour>() ?? other.GetComponentInParent<CharacterBehaviour>();
-                if (cb != null)
-                    buff = cb.gameObject.AddComponent<CamoBuff>();
-                else
-                    buff = other.gameObject.AddComponent<CamoBuff>();
-            }
-
-            if (buff != null)
-            {
-                buff.Grant(buffDuration);
+                isCollected = true;
+                if (GlobalBuffManager.Instance != null)
+                {
+                    GlobalBuffManager.Instance.ActivateCamo(buffDuration);
+                }
                 Destroy(gameObject);
             }
         }
