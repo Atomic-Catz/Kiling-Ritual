@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 2560
     height: 1349
   m_ShowMode: 4
-  m_Title: Hierarchy
+  m_Title: Inspector
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -119,7 +119,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 112}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 68375
+  controlID: 127
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -145,7 +145,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 112}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 68364
+  controlID: 39
   draggingID: 0
 --- !u!114 &7
 MonoBehaviour:
@@ -171,7 +171,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 56}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 68365
+  controlID: 40
   draggingID: 0
 --- !u!114 &8
 MonoBehaviour:
@@ -251,7 +251,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 56}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 68434
+  controlID: 80
   draggingID: 0
 --- !u!114 &11
 MonoBehaviour:
@@ -272,8 +272,8 @@ MonoBehaviour:
     y: 0
     width: 590
     height: 333
-  m_MinSize: {x: 50, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 51, y: 76}
+  m_MaxSize: {x: 4001, y: 4026}
   m_ActualView: {fileID: 19}
   m_Panes:
   - {fileID: 19}
@@ -315,7 +315,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
+  m_Name: InspectorWindow
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -775,75 +775,16 @@ MonoBehaviour:
       m_LastClickedID:
         m_Data: 0
       m_ExpandedIDs:
-      - m_Data: -1025628
-      - m_Data: -1025548
-      - m_Data: -994008
-      - m_Data: -993952
-      - m_Data: -993764
-      - m_Data: -953770
-      - m_Data: -922364
-      - m_Data: -891238
-      - m_Data: -890900
-      - m_Data: -859402
-      - m_Data: -828444
-      - m_Data: -828088
-      - m_Data: -797184
-      - m_Data: -765870
-      - m_Data: -734868
-      - m_Data: -703570
-      - m_Data: -671648
-      - m_Data: -506652
-      - m_Data: -506572
-      - m_Data: -475048
-      - m_Data: -474976
-      - m_Data: -474384
-      - m_Data: -443052
-      - m_Data: -441928
-      - m_Data: -439496
-      - m_Data: -439416
-      - m_Data: -407886
-      - m_Data: -407830
-      - m_Data: -376720
-      - m_Data: -310766
-      - m_Data: -310686
-      - m_Data: -279152
-      - m_Data: -279092
-      - m_Data: -175656
-      - m_Data: -168822
-      - m_Data: -164304
-      - m_Data: -154836
-      - m_Data: -154764
-      - m_Data: -153778
-      - m_Data: -147480
-      - m_Data: -144006
-      - m_Data: -143922
-      - m_Data: -143816
-      - m_Data: -97372
-      - m_Data: -96836
-      - m_Data: -65934
-      - m_Data: -32646
-      - m_Data: -1364
-      - m_Data: -12
-      - m_Data: 63854
-      - m_Data: 63902
-      - m_Data: 63920
-      - m_Data: 63928
-      - m_Data: 64016
-      - m_Data: 73148
-      - m_Data: 73214
-      - m_Data: 73310
-      - m_Data: 102722
-      - m_Data: 102800
-      - m_Data: 102840
-      - m_Data: 102954
-      - m_Data: 316062
-      - m_Data: 396560
-      - m_Data: 408882
-      - m_Data: 430652
+      - m_Data: -35546
+      - m_Data: -35466
+      - m_Data: -3926
+      - m_Data: -3870
+      - m_Data: -1450
+      - m_Data: 50152
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: 
-        m_OriginalName: 
+        m_Name: The vendor manRIG
+        m_OriginalName: The vendor manRIG
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
@@ -851,10 +792,10 @@ MonoBehaviour:
           width: 0
           height: 0
         m_UserData:
-          m_Data: 0
+          m_Data: 92730
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 11
+        m_OriginalEventType: 0
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
         m_ClientGUIView: {fileID: 8}
@@ -1475,9 +1416,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 795.49817, y: -597.3421, z: 150.47078}
+    m_Target: {x: 752.65735, y: 463.43304, z: 409.04456}
     speed: 2
-    m_Value: {x: 795.49817, y: -597.3421, z: 150.47078}
+    m_Value: {x: 752.65735, y: 463.43304, z: 409.04456}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1523,13 +1464,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.23754944, y: 0.60661364, z: -0.19666001, w: 0.73274827}
+    m_Target: {x: -0.0044998, y: 0.0015006433, z: 0.000005766752, w: 0.9999875}
     speed: 2
-    m_Value: {x: 0.23754884, y: 0.60661215, z: -0.19665952, w: 0.7327464}
+    m_Value: {x: -0.0044997926, y: 0.0030006263, z: 0.000012516461, w: 0.9999854}
   m_Size:
-    m_Target: 671.1075
+    m_Target: 713.0952
     speed: 2
-    m_Value: 642.2081
+    m_Value: 713.0952
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -1843,7 +1784,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scenes
+    - Assets/Custom duds
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1853,24 +1794,25 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Scenes
+  - Assets/Custom duds
   m_LastFoldersGridSize: -1
   m_LastProjectPath: D:\UnityProjects\KillingRitual\Kiling.Ritual
   m_LockTracker:
     m_IsLocked: 0
   m_LastLocalAssetsSearchArea: 1
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 369}
+    scrollPos: {x: 0, y: 19}
     m_SelectedIDs:
-    - m_Data: 63718
+    - m_Data: 51130
     m_LastClickedID:
-      m_Data: 63718
+      m_Data: 51130
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 29314
-    - m_Data: 63548
-    - m_Data: 63550
-    - m_Data: 63552
+    - m_Data: 29336
+    - m_Data: 51014
+    - m_Data: 51016
+    - m_Data: 51018
+    - m_Data: 51164
     - m_Data: 1000000000
     - m_Data: 2147483647
     m_RenameOverlay:
@@ -1905,12 +1847,10 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 29314
-    - m_Data: 63548
-    - m_Data: 63550
-    - m_Data: 63552
-    - m_Data: 1000000000
-    - m_Data: 2147483647
+    - m_Data: 29336
+    - m_Data: 51014
+    - m_Data: 51016
+    - m_Data: 51018
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 

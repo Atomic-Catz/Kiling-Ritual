@@ -242,17 +242,36 @@ namespace InfimaGames.LowPolyShooterPack
             if (reloading) reloading = false;
         }
 
+        // ==========================================
+        // THE BULLETPROOF WEAPON SWAP COROUTINE
+        // ==========================================
         private IEnumerator Equip(int index = 0)
         {
             if(!holstered)
             {
-                SetHolstered(holstering = true);
-                yield return new WaitUntil(() => holstering == false);
+                SetHolstered(true);
+                holstering = true;
+
+                // THE WATCHDOG TIMEOUT: 
+                // If the Server interrupts the local Holster animation, the Animator event gets swallowed.
+                // We wait a maximum of 0.75 seconds. If the event didn't fire, we force it to continue!
+                float timeout = Time.time + 0.75f;
+                yield return new WaitUntil(() => holstering == false || Time.time > timeout);
+                
+                // Force un-stick just in case the network swallowed the event
+                holstering = false; 
             }
+            
             SetHolstered(false);
             characterAnimator.Play("Unholster", layerHolster, 0);
             inventory.Equip(index);
             RefreshWeaponSetup();
+
+            // Tell the Server that we successfully swapped our models locally!
+            if (isOwner)
+            {
+                CmdSyncWeaponSwap(index);
+            }
         }
 
         private void RefreshWeaponSetup()
@@ -380,6 +399,21 @@ namespace InfimaGames.LowPolyShooterPack
         // --- PURRNET RPC CHANNELS ---
 
         [ServerRpc]
+        private void CmdSyncWeaponSwap(int index)
+        {
+            ObserverSyncWeaponSwap(index);
+        }
+
+        [ObserversRpc]
+        private void ObserverSyncWeaponSwap(int index)
+        {
+            if (isOwner) return; 
+
+            inventory.Equip(index);
+            RefreshWeaponSetup();
+        }
+
+        [ServerRpc]
         public void CmdSpawnNetworkedProjectile(Vector3 fallbackPosition, Quaternion rotation, float impulse, bool trackingInstaKill)
         {
             var activeWeapon = equippedWeapon as Weapon;
@@ -428,7 +462,6 @@ namespace InfimaGames.LowPolyShooterPack
         [ObserversRpc]
         private void ObserverPlayFireEffects()
         {
-            // Ensure the muzzle flash triggers for external observers watching this player shoot
             if (isOwner) return; 
             
             if (equippedWeapon != null)
@@ -439,7 +472,7 @@ namespace InfimaGames.LowPolyShooterPack
                     var muzzle = activeWeapon.GetAttachmentManager().GetEquippedMuzzle();
                     if (muzzle != null) 
                     {
-                        muzzle.Effect(); // Re-enables muzzle fire particles on remote clients!
+                        muzzle.Effect(); 
                     }
                 }
                 

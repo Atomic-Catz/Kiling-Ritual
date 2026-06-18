@@ -1,12 +1,14 @@
 using UnityEngine;
-using PurrNet; // IMPORT PURRNET
-using System.Collections.Generic;
+using PurrNet;
+using System.Collections;
+using System.Reflection;
 
 namespace InfimaGames.LowPolyShooterPack
 {
     public class WeaponInteractable : NetworkBehaviour, IInteractable
     {
-        [Header("Weapon Data")] public string weaponName = "AK-47";
+        [Header("Weapon Data")] 
+        public string weaponName = "AK-47";
         public int price = 1500;
 
         [Tooltip("The index of this gun in the Player's Inventory child list.")]
@@ -19,112 +21,116 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void Interact(CharacterBehaviour user)
         {
-            // 1. Get the network component of the player who just pressed 'Interact'
             NetworkBehaviour playerNetwork = user.GetComponent<NetworkBehaviour>();
 
-            // 2. We ONLY want the local player's computer to send this request, 
-            // otherwise 4 computers will try to buy the gun at the exact same time!
             if (playerNetwork == null || !playerNetwork.isOwner) return;
 
-            // 3. Extract their exact Network ID
             int myPlayerId = playerNetwork.owner.HasValue ? (int)(ulong)playerNetwork.owner.Value.id : 0;
-
-            // 4. Send the purchase request up to the Server!
             CmdTryBuyWeapon(myPlayerId);
         }
 
-        // RequireOwnership = false allows ANY player to click this wall-buy, 
-        // not just the Server who spawned the Trader!
         [ServerRpc(requireOwnership: false)]
         private void CmdTryBuyWeapon(int buyerId)
         {
-            // 5. The Server checks the bank account
             if (ScoreManager.Instance != null && ScoreManager.Instance.SpendPoints(buyerId, price))
             {
                 Debug.Log($"[Server] Player {buyerId} successfully purchased {weaponName}!");
-
-                // 6. Bank approved! Tell ALL clients to update this player's inventory
+                
+                GrantWeaponOwnership(buyerId);
                 SyncGrantWeapon(buyerId);
             }
             else
             {
                 Debug.LogWarning($"[Server] Player {buyerId} cannot afford {weaponName}!");
-                // You could add a rejection buzzer sound here!
             }
         }
 
         [ObserversRpc]
         private void SyncGrantWeapon(int buyerId)
         {
-            // 1. Find the specific player who bought the weapon
-            Character targetPlayer = null;
-            Character[] allPlayers = FindObjectsOfType<Character>();
+            GrantWeaponOwnership(buyerId);
 
-            foreach (Character p in allPlayers)
+            Character targetPlayer = GetPlayerById(buyerId);
+            if (targetPlayer != null && targetPlayer.isOwner)
             {
-                if (p.owner.HasValue && (int)(ulong)p.owner.Value.id == buyerId)
-                {
-                    targetPlayer = p;
-                    break;
-                }
+                StartCoroutine(SafeAutoEquip(targetPlayer, inventoryIndex));
             }
+        }
 
+        // ==========================================
+        // LOGIC HELPERS
+        // ==========================================
+
+        private void GrantWeaponOwnership(int buyerId)
+        {
+            Character targetPlayer = GetPlayerById(buyerId);
             if (targetPlayer == null) return;
 
             Inventory playerInventory = targetPlayer.GetInventory() as Inventory;
             if (playerInventory == null) return;
 
-            // 2. Gather the player's current weapons
-            WeaponBehaviour[] allWeaponBehaviours = playerInventory.GetAllWeapons();
-            List<Weapon> purchasedWeapons = new List<Weapon>();
+            Weapon weaponToBuy = playerInventory.GetAllWeapons()[inventoryIndex] as Weapon;
+            if (weaponToBuy == null) return;
+            
+            weaponToBuy.isPurchased = true;
 
-            foreach (WeaponBehaviour wb in allWeaponBehaviours)
+            int gunCount = 0;
+            Weapon currentlyHeld = playerInventory.GetEquipped() as Weapon;
+
+            foreach (WeaponBehaviour wb in playerInventory.GetAllWeapons())
             {
                 Weapon w = wb as Weapon;
                 if (w != null && w.isPurchased)
                 {
-                    purchasedWeapons.Add(w);
+                    gunCount++;
                 }
             }
 
-            Weapon weaponToBuy = allWeaponBehaviours[inventoryIndex] as Weapon;
-            if (weaponToBuy == null || weaponToBuy.isPurchased) return;
-
-            // 3. TWO-WEAPON LIMIT LOGIC (Fixed)
-            if (purchasedWeapons.Count >= 2)
+            // THE FIX: Classic Zombies Rules. 
+            // If they have more than 2 guns, drop the one they are CURRENTLY holding!
+            if (gunCount > 2 && currentlyHeld != null && currentlyHeld != weaponToBuy)
             {
-                Weapon currentlyHeld = playerInventory.GetEquipped() as Weapon;
-                if (currentlyHeld != null)
+                currentlyHeld.isPurchased = false;
+            }
+        }
+
+        private IEnumerator SafeAutoEquip(Character player, int indexToEquip)
+        {
+            yield return new WaitForSeconds(0.2f);
+            
+            if (player != null)
+            {
+                MethodInfo canChangeMethod = player.GetType().GetMethod("CanChangeWeapon", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (canChangeMethod != null)
                 {
-                    // Revoke the old weapon
-                    currentlyHeld.isPurchased = false;
-
-                    // WE PUT THIS BACK: We MUST instantly hide the old gun, otherwise 
-                    // the LPSP internal logic crashes and leaves you with empty hands!
-                    currentlyHeld.gameObject.SetActive(false);
+                    yield return new WaitUntil(() => (bool)canChangeMethod.Invoke(player, null) == true);
                 }
-            }
+                
+                Inventory playerInventory = player.GetInventory() as Inventory;
+                if (playerInventory == null) yield break;
 
-            // 4. Unlock the new gun in their inventory
-            weaponToBuy.isPurchased = true;
-
-            // 5. Equip the new gun
-            if (targetPlayer.isOwner)
-            {
-                // If this is my player, run the smooth FPS logic
-                targetPlayer.StartCoroutine("Equip", inventoryIndex);
-            }
-            else
-            {
-                // If I am looking at another player, just snap the models instantly
-                Weapon currentlyHeld = playerInventory.GetEquipped() as Weapon;
-                if (currentlyHeld != null && currentlyHeld != weaponToBuy)
+                if (playerInventory.GetEquippedIndex() != indexToEquip)
                 {
-                    currentlyHeld.gameObject.SetActive(false);
-                }
+                    player.StartCoroutine("Equip", indexToEquip);
 
-                weaponToBuy.gameObject.SetActive(true);
+                    yield return new WaitForSeconds(1.5f);
+
+                    if (playerInventory.GetEquippedIndex() != indexToEquip)
+                    {
+                        Debug.LogWarning("[Watchdog] Animator event swallowed! Forcefully un-sticking the Holster state.");
+                        player.AnimationEndedHolster();
+                    }
+                }
             }
+        }
+
+        private Character GetPlayerById(int id)
+        {
+            foreach (Character p in FindObjectsOfType<Character>())
+            {
+                if (p.owner.HasValue && (int)(ulong)p.owner.Value.id == id) return p;
+            }
+            return null;
         }
     }
 }
