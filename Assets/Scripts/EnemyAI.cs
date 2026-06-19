@@ -3,7 +3,7 @@ using UnityEngine.AI;
 using InfimaGames.LowPolyShooterPack;
 using System.Collections.Generic;
 using System.Collections;
-using PurrNet; // IMPORT PURRNET CORE
+using PurrNet;
 
 namespace InfimaGames.LowPolyShooterPack
 {
@@ -83,7 +83,7 @@ namespace InfimaGames.LowPolyShooterPack
             if (!isServer || isDead) return;
             if (agent == null || !agent.isOnNavMesh) return;
 
-            // Recalculate which player window is closer
+            // Recalculate which player window is closer (ignoring downed players!)
             FindClosestPlayer();
 
             if (GlobalBuffManager.Instance != null && GlobalBuffManager.Instance.isCamoActive)
@@ -114,14 +114,23 @@ namespace InfimaGames.LowPolyShooterPack
                 }
             }
 
-            playerInSight = Physics.CheckSphere(transform.position, sightRange, isPlayer);
-            playerInAttack = Physics.CheckSphere(transform.position, attackRange, isPlayer);
+            // Only check for attack/sight if we actually have a valid player target!
+            if (player != null)
+            {
+                playerInSight = Physics.CheckSphere(transform.position, sightRange, isPlayer);
+                playerInAttack = Physics.CheckSphere(transform.position, attackRange, isPlayer);
+            }
+            else
+            {
+                playerInSight = false;
+                playerInAttack = false;
+            }
 
-            if (!isGrabbed && playerInAttack && playerInSight)
+            if (!isGrabbed && playerInAttack && playerInSight && player != null)
             {
                 AttackPlayer();
             }
-            else if (playerInSight && !playerInAttack)
+            else if (playerInSight && !playerInAttack && player != null)
             {
                 if (!isGrabbed)
                 {
@@ -155,19 +164,25 @@ namespace InfimaGames.LowPolyShooterPack
 
         private void FindClosestPlayer()
         {
-            Character[] allPlayers = FindObjectsOfType<Character>();
+            CharacterHealth[] allPlayers = FindObjectsOfType<CharacterHealth>();
             if (allPlayers == null || allPlayers.Length == 0)
             {
                 player = null;
                 return;
             }
 
-            Character closestCharacter = null;
+            CharacterHealth closestCharacter = null;
             float shortestDistance = Mathf.Infinity;
 
-            foreach (Character p in allPlayers)
+            foreach (CharacterHealth p in allPlayers)
             {
                 if (p == null) continue;
+
+                // THE FILTER: Skip this player if they are downed or dead!
+                if (p.isDowned.value || p.GetCurrentHealth() <= 0)
+                {
+                    continue;
+                }
 
                 float dist = Vector3.Distance(transform.position, p.transform.position);
                 if (dist < shortestDistance)
@@ -180,6 +195,11 @@ namespace InfimaGames.LowPolyShooterPack
             if (closestCharacter != null)
             {
                 player = closestCharacter.transform;
+            }
+            else
+            {
+                // If every single player is downed, clear the target completely!
+                player = null;
             }
         }
 
@@ -342,13 +362,10 @@ namespace InfimaGames.LowPolyShooterPack
 
             GetComponent<SpawnerEnemy>()?.ReportDeath();
 
-            // Broadcast the disabling updates and ragdoll swaps down to all players
             SyncDeathVisuals();
 
-            // Spawns powerup strictly on server, PurrNet replicates it dynamically
             TrySpawnPowerups();
 
-            // PurrNet automatically intercepts standard Destroy calls on the server
             Destroy(gameObject, 5f);
         }
 
@@ -444,7 +461,6 @@ namespace InfimaGames.LowPolyShooterPack
 
             SyncWalkingAnimation(false);
 
-            // Execute the player movement restriction across all clients
             SyncPlayerGrabbedState(true);
 
             yield return new WaitForSeconds(Mathf.Max(0.01f, grabDuration));
@@ -503,7 +519,6 @@ namespace InfimaGames.LowPolyShooterPack
             float roll = Random.Range(0f, 100f);
             if (roll <= drop.dropChance)
             {
-                // PurrNet automatically intercepts standard instantiation on the Server
                 Instantiate(drop.prefab, transform.position + Vector3.up, Quaternion.identity);
             }
         }

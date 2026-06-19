@@ -160,6 +160,13 @@ namespace InfimaGames.LowPolyShooterPack
 
         void Jump()
         {
+            // FIX: Stop the player from jumping if they are downed!
+            CharacterHealth health = GetComponent<CharacterHealth>();
+            if (health != null && health.isDowned.value) 
+            {
+                return; 
+            }
+
             if (grounded && Input.GetKeyDown(KeyCode.Space))
             {
                 rigidBody.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
@@ -170,6 +177,10 @@ namespace InfimaGames.LowPolyShooterPack
         
         private void MoveCharacter()
         {
+            // 1. Check if the player is currently downed
+            CharacterHealth health = GetComponent<CharacterHealth>();
+            bool isDowned = health != null && health.isDowned.value;
+
             Vector2 frameInput = playerCharacter.GetInputMovement();
     
             // --- BYPASS USING THE NEW INPUT SYSTEM HARDWARE API ---
@@ -186,17 +197,22 @@ namespace InfimaGames.LowPolyShooterPack
             }
             // -----------------------------------------------------
 
-            if (frameInput.sqrMagnitude > 0)
-            {
-                //Debug.Log($"[Movement] {gameObject.name} detected HARDWARE input: {frameInput}");
-            }
-
             var movement = new Vector3(frameInput.x, 0.0f, frameInput.y);
     
-            if(playerCharacter.IsRunning())
+            // 2. THE ULTIMATE OVERRIDE: 
+            // If downed, force a very slow speed and completely ignore sprint input!
+            if (isDowned)
+            {
+                movement *= (speedWalking * 0.25f); // 25% of normal walking speed
+            }
+            else if (playerCharacter.IsRunning())
+            {
                 movement *= speedRunning;
+            }
             else
+            {
                 movement *= speedWalking;
+            }
 
             movement = transform.TransformDirection(movement);
             Velocity = new Vector3(movement.x, Velocity.y, movement.z);

@@ -1,6 +1,6 @@
 using UnityEngine;
 using System;
-using PurrNet; // IMPORT PURRNET CORE
+using PurrNet;
 
 namespace InfimaGames.LowPolyShooterPack
 {
@@ -9,73 +9,117 @@ namespace InfimaGames.LowPolyShooterPack
         [Header("Health Settings")]
         [SerializeField] private float maxHealth = 100f;
         
-        // FIX: PurrNet uses SyncVar<T> instead of NetworkSync<T>
+        [Header("Downed Settings")]
+        [SerializeField] private float maxBleedOutTime = 45f;
+        [SerializeField] private float revivedHealth = 50f;
+
+        // --- NETWORK VARIABLES ---
         [SerializeField] private SyncVar<float> currentHealth = new SyncVar<float>(100f);
+        public SyncVar<bool> isDowned = new SyncVar<bool>(false);
+        public SyncVar<bool> isBeingRevived = new SyncVar<bool>(false);
+        public SyncVar<float> bleedOutTime = new SyncVar<float>(45f);
 
         public event Action OnDeath;
-        private bool isDead = false;
-
+        public event Action<bool> OnDownedStateChanged;
         public event Action<float, float> OnHealthChanged;
+
+        private bool isDead = false;
 
         private void Awake()
         {
-            // Registering to the event remains exactly the same
             currentHealth.onChanged += OnHealthSyncChanged;
+            isDowned.onChanged += OnDownedSyncChanged;
         }
 
         private void Start()
         {
-            // Only the local player who OWNS this character needs to listen to the UI Death Menu popups
-            if (isOwner)
-            {
-                OnDeath += HandleDeath;
-            }
+            if (isOwner) OnDeath += HandleDeath;
             
-            // Initialize health values on startup
             if (isServer)
             {
                 currentHealth.value = maxHealth;
+                bleedOutTime.value = maxBleedOutTime;
             }
             
-            // Trigger initial UI update frame
             OnHealthChanged?.Invoke(currentHealth.value, maxHealth);
         }
 
-        /// <summary>
-        /// Automatically called by PurrNet whenever health updates on the network
-        /// </summary>
+        private void Update()
+        {
+            // Only the Server manages the bleed-out clock!
+            if (isServer && isDowned.value && !isDead)
+            {
+                // Pause the timer if a teammate is actively reviving them
+                if (!isBeingRevived.value)
+                {
+                    bleedOutTime.value -= Time.deltaTime;
+                    if (bleedOutTime.value <= 0f)
+                    {
+                        Die();
+                    }
+                }
+            }
+        }
+
         private void OnHealthSyncChanged(float newHealth)
         {
             OnHealthChanged?.Invoke(newHealth, maxHealth);
+        }
 
-            if (newHealth <= 0f && !isDead)
-            {
-                Die();
-            }
+        private void OnDownedSyncChanged(bool downed)
+        {
+            OnDownedStateChanged?.Invoke(downed);
         }
 
         public void TakeDamage(float amount)
         {
-            // CRITICAL GUARD: Only the server is allowed to process actual damage changes
-            if (!isServer || isDead) return; 
+            // Don't take damage if they are already down or dead
+            if (!isServer || isDead || isDowned.value) return; 
             if (amount <= 0) return;
 
             currentHealth.value -= amount;
             currentHealth.value = Mathf.Clamp(currentHealth.value, 0, maxHealth);
 
             Debug.Log($"[Server Health] {gameObject.name} took {amount} damage. Current health: {currentHealth.value}");
+
+            if (currentHealth.value <= 0)
+            {
+                EnterDownedState();
+            }
         }
 
         public void Heal(float amount)
         {
-            // Healing must also be modified on the server authority layer
-            if (!isServer || isDead) return; 
+            if (!isServer || isDead || isDowned.value) return; 
             if (amount <= 0) return;
 
             currentHealth.value += amount;
             currentHealth.value = Mathf.Clamp(currentHealth.value, 0, maxHealth);
 
             Debug.Log($"[Server Health] Healed {amount}. Health: {currentHealth.value}");
+        }
+
+        private void EnterDownedState()
+        {
+            isDowned.value = true;
+            bleedOutTime.value = maxBleedOutTime;
+            Debug.Log($"[Server Health] {gameObject.name} is DOWNED!");
+
+            // Check if the whole team just wiped!
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.CheckGameOverCondition();
+            }
+        }
+
+        public void RevivePlayer()
+        {
+            if (!isServer || isDead) return;
+
+            isDowned.value = false;
+            isBeingRevived.value = false;
+            currentHealth.value = revivedHealth; // Give them some health back
+            Debug.Log($"[Server Health] {gameObject.name} was REVIVED!");
         }
 
         private void HandleDeath()
@@ -90,10 +134,16 @@ namespace InfimaGames.LowPolyShooterPack
         {
             if (isDead) return; 
             isDead = true;
+            isDowned.value = false;
 
-            Debug.Log($"[CharacterHealth] {gameObject.name} died!");
-
+            Debug.Log($"[CharacterHealth] {gameObject.name} died completely!");
             OnDeath?.Invoke();
+
+            // Check if the whole team just wiped!
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.CheckGameOverCondition();
+            }
         }
     }
 }

@@ -1,50 +1,43 @@
-using InfimaGames.LowPolyShooterPack;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using PurrNet; // Needed to safely disconnect
 
 public class DeathMenu : MonoBehaviour
 {
     [Header("UI")]
     public GameObject deathMenuUI;
 
-    [Header("Player")]
-    public GameObject player;
+    [Header("Scene Settings")]
+    [Tooltip("The exact name of your Main Menu scene to load when disconnecting.")]
+    public string mainMenuSceneName = "MainMenu";
 
     private bool isShown = false;
 
     public void Show()
     {
-        
-        PauseMenu.IsPlayerDead = true;
-
         if (isShown) return;
         isShown = true;
 
-        deathMenuUI.SetActive(true);
-        //Time.timeScale = 0f;
+        if (deathMenuUI != null) deathMenuUI.SetActive(true);
 
-        // Disable player control
-        if (player != null)
-        {
-            var movement = player.GetComponent<Movement>();
-            if (movement) movement.enabled = false;
-
-            var look = player.GetComponentInChildren<CameraLook>();
-            if (look) look.enabled = false;
-
-            var audio = player.GetComponent<AudioSource>();
-            if (audio) audio.enabled = false;
-        }
-
-        // Unlock cursor
+        // Unlock cursor so the player can click the buttons
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
-    public void Retry()
+    // Replace your UI "Retry" button with a "Disconnect" button
+    public void Disconnect()
     {
-        //Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        Debug.Log("Disconnecting from server...");
+
+        // Safely destroy the network manager to sever the connection
+        if (NetworkManager.main != null)
+        {
+            Destroy(NetworkManager.main.gameObject);
+        }
+
+        // Load back into the main menu
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 
     public void Quit()

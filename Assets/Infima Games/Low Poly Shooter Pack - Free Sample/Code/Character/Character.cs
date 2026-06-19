@@ -24,6 +24,11 @@ namespace InfimaGames.LowPolyShooterPack
         private float lastHealTime = -Mathf.Infinity;
         private Coroutine healCoroutine;
         
+        [Header("Downed Prototype Settings")]
+        [SerializeField] private float downedDropHeight = 1.0f;
+        [SerializeField] private float downedTiltAngle = 30f;
+        [SerializeField] private float crawlSpeedMultiplier = 0.25f; // Slows movement when downed
+        
         [Header("Interaction")]
         [SerializeField] private float interactRange = 3f;
         [SerializeField] private LayerMask interactMask;
@@ -79,6 +84,14 @@ namespace InfimaGames.LowPolyShooterPack
 
         private Coroutine reloadSafetyCoroutine;
 
+        // Downed Visual Tracking
+        private Vector3 defaultCameraLocalPos;
+        private Vector3 defaultInventoryLocalPos;
+        private Coroutine downedVisualCoroutine;
+
+        // Tracks if the pause menu is open!
+        public bool isMenuOpen { get; private set; }
+
         #endregion
 
         #region CONSTANTS
@@ -94,10 +107,94 @@ namespace InfimaGames.LowPolyShooterPack
         {
             enabled = false;
             if (characterKinematics != null) characterKinematics.enabled = false;
-            if (deathScreen != null) deathScreen.SetActive(true);
 
+            if (isOwner)
+            {
+                CmdSyncDeathVisuals();
+            }
+
+            if (deathScreen != null) deathScreen.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+        }
+
+        [ServerRpc]
+        private void CmdSyncDeathVisuals()
+        {
+            ObserverSyncDeathVisuals();
+        }
+
+        [ObserversRpc]
+        private void ObserverSyncDeathVisuals()
+        {
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            foreach (var r in renderers) r.enabled = false;
+
+            Collider[] colliders = GetComponentsInChildren<Collider>(true);
+            foreach (var c in colliders) c.enabled = false;
+            
+            Canvas[] canvases = GetComponentsInChildren<Canvas>(true);
+            foreach (var canvas in canvases) canvas.enabled = false;
+        }
+
+        private void HandleDownedStateChanged(bool downed)
+        {
+            if (downed)
+            {
+                aiming = false;
+                running = false;
+                
+                // Turn off Kinematics so it stops overriding our camera tilt!
+                if (characterKinematics != null) characterKinematics.enabled = false;
+            }
+            else
+            {
+                // Turn Kinematics back on when revived!
+                if (characterKinematics != null) characterKinematics.enabled = true;
+            }
+
+            // INSTANT INVISIBILITY: Hide or show the arms and weapon
+            if (isOwner && inventory != null)
+            {
+                Renderer[] renderers = inventory.GetComponentsInChildren<Renderer>(true);
+                foreach (var r in renderers)
+                {
+                    r.enabled = !downed; // False when down, True when back up!
+                }
+            }
+
+            if (isOwner && cameraWorld != null && inventory != null)
+            {
+                if (downedVisualCoroutine != null) StopCoroutine(downedVisualCoroutine);
+                downedVisualCoroutine = StartCoroutine(DoDownedVisualTransition(downed));
+            }
+        }
+        
+        private IEnumerator DoDownedVisualTransition(bool isDowned)
+        {
+            Vector3 targetCamPos = isDowned ? defaultCameraLocalPos - new Vector3(0, downedDropHeight, 0) : defaultCameraLocalPos;
+            Vector3 targetInvPos = isDowned ? defaultInventoryLocalPos - new Vector3(0, downedDropHeight, 0) : defaultInventoryLocalPos;
+            
+            float targetRoll = isDowned ? downedTiltAngle : 0f;
+            float t = 0;
+
+            while (t < 1f)
+            {
+                t += Time.deltaTime * 4f; 
+                
+                cameraWorld.transform.localPosition = Vector3.Lerp(cameraWorld.transform.localPosition, targetCamPos, t);
+                Vector3 camEuler = cameraWorld.transform.localEulerAngles;
+                camEuler.z = Mathf.LerpAngle(camEuler.z, targetRoll, t);
+                cameraWorld.transform.localEulerAngles = camEuler;
+
+                // Even though the arms are invisible, we still move the inventory down so audio/muzzles stay aligned
+                inventory.transform.localPosition = Vector3.Lerp(inventory.transform.localPosition, targetInvPos, t);
+                Vector3 invEuler = inventory.transform.localEulerAngles;
+                invEuler.z = Mathf.LerpAngle(invEuler.z, targetRoll, t);
+                inventory.transform.localEulerAngles = invEuler;
+
+                yield return null;
+            }
         }
         
         private void Awake()
@@ -108,7 +205,14 @@ namespace InfimaGames.LowPolyShooterPack
             characterKinematics = GetComponent<CharacterKinematics>();
             characterHealth = GetComponent<CharacterHealth>();
 
-            if (characterHealth != null) characterHealth.OnDeath += HandleDeath;
+            if (cameraWorld != null) defaultCameraLocalPos = cameraWorld.transform.localPosition;
+            if (inventory != null) defaultInventoryLocalPos = inventory.transform.localPosition;
+
+            if (characterHealth != null) 
+            {
+                characterHealth.OnDeath += HandleDeath;
+                characterHealth.OnDownedStateChanged += HandleDownedStateChanged;
+            }
 
             inventory.Init();
             RefreshWeaponSetup();
@@ -116,7 +220,11 @@ namespace InfimaGames.LowPolyShooterPack
 
         private void OnDestroy()
         {
-            if (characterHealth != null) characterHealth.OnDeath -= HandleDeath;
+            if (characterHealth != null) 
+            {
+                characterHealth.OnDeath -= HandleDeath;
+                characterHealth.OnDownedStateChanged -= HandleDownedStateChanged;
+            }
         }
 
         protected override void Start()
@@ -178,17 +286,44 @@ namespace InfimaGames.LowPolyShooterPack
 
         public override Camera GetCameraWorld() => cameraWorld;
         public override InventoryBehaviour GetInventory() => inventory;
-        public override bool IsCrosshairVisible() => !aiming && !holstered;
+        public override bool IsCrosshairVisible() => !aiming && !holstered && !isMenuOpen; // Hide crosshair in menu
         public override bool IsRunning() => running;
         public override bool IsAiming() => aiming;
         public override bool IsCursorLocked() => cursorLocked;
         public override bool IsTutorialTextVisible() => tutorialTextVisible;
-        public override Vector2 GetInputMovement() => axisMovement;
+        
+        public override Vector2 GetInputMovement() 
+        {
+            // Block all movement if the menu is open
+            if (isMenuOpen) return Vector2.zero;
+
+            if (characterHealth != null && characterHealth.isDowned.value) 
+            {
+                return axisMovement * crawlSpeedMultiplier; 
+            }
+            return axisMovement;
+        }
+        
         public override Vector2 GetInputLook() => axisLook;
 
         #endregion
 
         #region METHODS
+
+        // THE MISSING METHOD IS BACK: Called by PauseMenu.cs to unlock the cursor
+        public void SetMenuOpen(bool open)
+        {
+            isMenuOpen = open;
+            cursorLocked = !open;
+            UpdateCursorState();
+            
+            // Immediately stop aiming and firing if we open the menu
+            if (open)
+            {
+                aiming = false;
+                holdingButtonFire = false;
+            }
+        }
 
         private void CheckForInteractable()
         {
@@ -242,9 +377,6 @@ namespace InfimaGames.LowPolyShooterPack
             if (reloading) reloading = false;
         }
 
-        // ==========================================
-        // THE BULLETPROOF WEAPON SWAP COROUTINE
-        // ==========================================
         private IEnumerator Equip(int index = 0)
         {
             if(!holstered)
@@ -252,13 +384,9 @@ namespace InfimaGames.LowPolyShooterPack
                 SetHolstered(true);
                 holstering = true;
 
-                // THE WATCHDOG TIMEOUT: 
-                // If the Server interrupts the local Holster animation, the Animator event gets swallowed.
-                // We wait a maximum of 0.75 seconds. If the event didn't fire, we force it to continue!
                 float timeout = Time.time + 0.75f;
                 yield return new WaitUntil(() => holstering == false || Time.time > timeout);
                 
-                // Force un-stick just in case the network swallowed the event
                 holstering = false; 
             }
             
@@ -267,7 +395,6 @@ namespace InfimaGames.LowPolyShooterPack
             inventory.Equip(index);
             RefreshWeaponSetup();
 
-            // Tell the Server that we successfully swapped our models locally!
             if (isOwner)
             {
                 CmdSyncWeaponSwap(index);
@@ -312,15 +439,18 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region ACTION CHECKS
 
-        private bool CanPlayAnimationFire() => !(holstered || holstering || reloading || inspecting);
-        private bool CanPlayAnimationReload() => !(reloading || inspecting);
-        private bool CanPlayAnimationHolster() => !(reloading || inspecting);
-        private bool CanChangeWeapon() => !(holstering || reloading || inspecting);
-        private bool CanPlayAnimationInspect() => !(holstered || reloading || holstering || inspecting);
-        private bool CanAim() => !(holstered || inspecting || reloading || holstering);
+        private bool IsPlayerDowned() => characterHealth != null && characterHealth.isDowned.value;
+
+        // FIXED: Added !isMenuOpen to all actions so you can't shoot/reload while clicking UI buttons!
+        private bool CanPlayAnimationFire() => !(holstered || holstering || reloading || inspecting) && !IsPlayerDowned() && !isMenuOpen;
+        private bool CanPlayAnimationReload() => !(reloading || inspecting) && !IsPlayerDowned() && !isMenuOpen; 
+        private bool CanPlayAnimationHolster() => !(reloading || inspecting) && !IsPlayerDowned() && !isMenuOpen;
+        private bool CanChangeWeapon() => !(holstering || reloading || inspecting) && !IsPlayerDowned() && !isMenuOpen;
+        private bool CanPlayAnimationInspect() => !(holstered || reloading || holstering || inspecting) && !IsPlayerDowned() && !isMenuOpen;
+        private bool CanAim() => !(holstered || inspecting || reloading || holstering) && !IsPlayerDowned() && !isMenuOpen;
         private bool CanRun()
         {
-            if (inspecting || reloading || aiming) return false;
+            if (IsPlayerDowned() || inspecting || reloading || aiming || isMenuOpen) return false;
             if (holdingButtonFire && equippedWeapon.HasAmmunition()) return false;
             if (axisMovement.y <= 0 || Math.Abs(Mathf.Abs(axisMovement.x) - 1) < 0.01f) return false;
             return true;
@@ -332,13 +462,13 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void OnTryInteract(InputAction.CallbackContext context)
         {
-            if (!isOwner || !cursorLocked || context.phase != InputActionPhase.Performed) return;
+            if (!isOwner || !cursorLocked || context.phase != InputActionPhase.Performed || IsPlayerDowned() || isMenuOpen) return;
             if (currentInteractable != null) currentInteractable.Interact(this);
         }
         
         public void OnTryHeal(InputAction.CallbackContext context)
         {
-            if (!isOwner || !cursorLocked || characterHealth == null || context.phase != InputActionPhase.Started) return;
+            if (!isOwner || !cursorLocked || characterHealth == null || context.phase != InputActionPhase.Started || IsPlayerDowned() || isMenuOpen) return;
             if (reloading || inspecting || holstering || characterHealth.GetCurrentHealth() >= characterHealth.GetMaxHealth()) return;
             if (Time.time - lastHealTime < healCooldown) return;
 
@@ -547,7 +677,8 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void OnLockCursor(InputAction.CallbackContext context)
         {
-            if (!isOwner || context.phase != InputActionPhase.Performed) return;
+            // Ignore cursor lock toggles if the menu is actively open
+            if (!isOwner || context.phase != InputActionPhase.Performed || isMenuOpen) return;
             cursorLocked = !cursorLocked;
             UpdateCursorState();
         }

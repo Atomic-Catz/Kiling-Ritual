@@ -1,63 +1,87 @@
-using InfimaGames.LowPolyShooterPack;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using PurrNet;
+using InfimaGames.LowPolyShooterPack;
 
 public class PauseMenu : MonoBehaviour
 {
-    public static bool GameIsPaused = false;
+    [Header("UI References")]
+    [Tooltip("The parent GameObject that holds your Pause Menu buttons/background.")]
+    public GameObject pauseUI;
 
-    public static bool IsPlayerDead = false;
-    
-    [Header("UI")]
-    public GameObject pauseMenuUI;
+    [Header("Scene Settings")]
+    [Tooltip("The exact name of your Main Menu scene to load when disconnecting.")]
+    public string mainMenuSceneName = "MainMenu";
 
-    public GameObject player;
+    private Character localPlayer;
+    private bool isMenuOpen = false;
 
-    void Update()
+    private void Start()
     {
-        if (IsPlayerDead) return;
+        // Start with the menu hidden
+        if (pauseUI != null) pauseUI.SetActive(false);
 
-        if (Input.GetKeyDown(KeyCode.Escape))
+        // Find the local player as soon as this UI spawns
+        Character[] players = FindObjectsOfType<Character>();
+        foreach (var p in players)
         {
-            if (GameIsPaused)
-                Resume();
-            else
-                Pause();
+            if (p.isOwner)
+            {
+                localPlayer = p;
+                break;
+            }
         }
     }
 
-
-    public void Resume()
+    private void Update()
     {
-        pauseMenuUI.SetActive(false);
-        //Time.timeScale = 1f;
-        GameIsPaused = false;
-        
-        player.GetComponent<AudioSource>().enabled = true;
-        player.GetComponentInChildren<CameraLook>().enabled = true;
-        player.GetComponent<Movement>().enabled = true;
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // Toggle the menu when pressing Escape
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            ToggleMenu();
+        }
     }
 
-    void Pause()
+    public void ToggleMenu()
     {
-        pauseMenuUI.SetActive(true);
-        //Time.timeScale = 0f;
-        GameIsPaused = true;
+        isMenuOpen = !isMenuOpen;
         
-        player.GetComponent<AudioSource>().enabled = false;
-        player.GetComponentInChildren<CameraLook>().enabled = false;
-        player.GetComponent<Movement>().enabled = false;
+        if (pauseUI != null) 
+            pauseUI.SetActive(isMenuOpen);
 
+        // Tell the character script to unlock the cursor and stop shooting
+        if (localPlayer != null)
+        {
+            localPlayer.SetMenuOpen(isMenuOpen);
+        }
+        else
+        {
+            // Fallback just in case the player hasn't fully initialized yet
+            Cursor.lockState = isMenuOpen ? CursorLockMode.None : CursorLockMode.Locked;
+            Cursor.visible = isMenuOpen;
+        }
+    }
+
+    public void ResumeGame()
+    {
+        if (isMenuOpen) ToggleMenu();
+    }
+
+    public void Disconnect()
+    {
+        Debug.Log("Disconnecting from server...");
+
+        // Safely destroy the network manager to sever the connection
+        if (NetworkManager.main != null)
+        {
+            Destroy(NetworkManager.main.gameObject);
+        }
+
+        // FIX: Force the cursor to unlock and become visible for the Main Menu!
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-    }
 
-    public void LoadMenu()
-    {
-        //Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenu");
+        // Load back into the main menu
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 }
