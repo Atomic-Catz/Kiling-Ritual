@@ -284,6 +284,7 @@ namespace InfimaGames.LowPolyShooterPack
 
         #region GETTERS
 
+        public IInteractable GetCurrentInteractable() => currentInteractable;
         public override Camera GetCameraWorld() => cameraWorld;
         public override InventoryBehaviour GetInventory() => inventory;
         public override bool IsCrosshairVisible() => !aiming && !holstered && !isMenuOpen; // Hide crosshair in menu

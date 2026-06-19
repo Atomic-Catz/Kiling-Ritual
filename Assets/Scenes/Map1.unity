@@ -45699,7 +45699,7 @@ PrefabInstance:
     - target: {fileID: 8487929740440027270, guid: 4c990db17e4362f4e90e51cfdf707a0d,
         type: 3}
       propertyPath: breakDuration
-      value: 15
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 8487929740440027270, guid: 4c990db17e4362f4e90e51cfdf707a0d,
         type: 3}

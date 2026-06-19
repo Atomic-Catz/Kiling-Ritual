@@ -14,9 +14,10 @@ namespace InfimaGames.LowPolyShooterPack
         [Tooltip("The index of this gun in the Player's Inventory child list.")]
         public int inventoryIndex;
 
+        // Hooked into your new UI System!
         public string GetInteractText()
         {
-            return $"Buy {weaponName} - $ {price}";
+            return $"[E] Buy {weaponName} - $ {price}";
         }
 
         public void Interact(CharacterBehaviour user)
@@ -86,7 +87,7 @@ namespace InfimaGames.LowPolyShooterPack
                 }
             }
 
-            // THE FIX: Classic Zombies Rules. 
+            // Classic Zombies Rules. 
             // If they have more than 2 guns, drop the one they are CURRENTLY holding!
             if (gunCount > 2 && currentlyHeld != null && currentlyHeld != weaponToBuy)
             {

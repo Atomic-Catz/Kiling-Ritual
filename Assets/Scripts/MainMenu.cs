@@ -12,8 +12,7 @@ using PurrNet.Transports;
 
 public class MainMenu : MonoBehaviour
 {
-    // === NEW: STATIC MEMORY VARIABLES ===
-    // These survive the scene load and tell Map1 what to do!
+    // === STATIC MEMORY VARIABLES ===
     public static bool connectAsHost = false;
     public static bool connectAsClient = false;
     public static string joinIP = "";
@@ -27,6 +26,11 @@ public class MainMenu : MonoBehaviour
     public GameObject audioTabPanel;
     public GameObject controlsTabPanel;
     public GameObject videoTabPanel;
+
+    [Header("Player Profile")]
+    public TMP_InputField nameInputField;
+    public Button[] playButtons; // Drag your Solo, Host, and Join buttons here
+    private const string NamePrefsKey = "PlayerNametag";
 
     [Header("Audio Settings")] 
     public AudioMixer mainMixer;
@@ -56,6 +60,58 @@ public class MainMenu : MonoBehaviour
         ShowMainMenu();
         LoadControlSettings();
         InitializeVideoSettings();
+        InitializePlayerProfile();
+    }
+
+    // ==========================================
+    // PLAYER PROFILE LOGIC (NEW)
+    // ==========================================
+
+    private void InitializePlayerProfile()
+    {
+        if (nameInputField == null) return;
+
+        // Load the saved name, or generate a default one
+        if (PlayerPrefs.HasKey(NamePrefsKey))
+        {
+            nameInputField.text = PlayerPrefs.GetString(NamePrefsKey);
+        }
+        else
+        {
+            string randomName = "Survivor_" + UnityEngine.Random.Range(1000, 9999);
+            nameInputField.text = randomName;
+            SavePlayerName(randomName);
+        }
+
+        // Validate the buttons immediately on startup
+        ValidateNameInput(nameInputField.text);
+
+        // Listen for real-time typing to enable/disable buttons instantly
+        nameInputField.onValueChanged.AddListener(ValidateNameInput);
+        
+        // Save the name when the player finishes typing
+        nameInputField.onEndEdit.AddListener(SavePlayerName);
+    }
+
+    private void ValidateNameInput(string newName)
+    {
+        // Check if the name is empty or just spaces
+        bool isValid = !string.IsNullOrWhiteSpace(newName);
+
+        // Turn all assigned play buttons on or off
+        foreach (Button btn in playButtons)
+        {
+            if (btn != null) btn.interactable = isValid;
+        }
+    }
+
+    public void SavePlayerName(string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName)) return;
+
+        PlayerPrefs.SetString(NamePrefsKey, newName);
+        PlayerPrefs.Save();
+        Debug.Log($"[Profile] Name saved as: {newName}");
     }
 
     // ==========================================
@@ -70,7 +126,7 @@ public class MainMenu : MonoBehaviour
     public void ShowVideoTab() { audioTabPanel.SetActive(false); controlsTabPanel.SetActive(false); videoTabPanel.SetActive(true); }
     
     // ==========================================
-    // MULTIPLAYER PLAY SECTION (UPDATED)
+    // MULTIPLAYER PLAY SECTION
     // ==========================================
 
     public void PlaySolo()
@@ -99,7 +155,9 @@ public class MainMenu : MonoBehaviour
 
     private void ConnectAndLoad(bool isHost)
     {
-        // 1. Set the static memory variables for Map1 to read
+        // Double-check the name is saved before we load the map
+        if (nameInputField != null) SavePlayerName(nameInputField.text);
+
         if (isHost)
         {
             connectAsHost = true;
@@ -112,7 +170,6 @@ public class MainMenu : MonoBehaviour
             joinIP = string.IsNullOrWhiteSpace(ipInputField.text) ? defaultIP : ipInputField.text;
         }
 
-        // 2. Simply load the map! No waiting, no freezing.
         SceneManager.LoadScene(gameSceneName);
     }
 
