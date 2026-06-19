@@ -1,3 +1,4 @@
+using System; // Required for Actions/Events
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +8,11 @@ namespace InfimaGames.LowPolyShooterPack
 {
     public class WaveManager : NetworkBehaviour
     {
+        // --- NEW: Singleton & Event for the UI ---
+        public static WaveManager Instance;
+        public event Action<int> OnWaveChanged;
+        // -----------------------------------------
+
         [Header("Intro Delay Settings")]
         [SerializeField] private float gameStartDelay = 10f; // CoD Zombies style intro countdown
 
@@ -28,11 +34,16 @@ namespace InfimaGames.LowPolyShooterPack
         public float countMultiplier = 1.15f;
         public float healthMultiplier = 1.1f;
 
-        private int currentWave = 0;
+        // Made public so the UI can check it when it first loads!
+        public int currentWave = 0;
         private bool loopInitialized = false;
 
         private void Awake()
         {
+            // Setup the Singleton so the UI can find this script instantly
+            if (Instance == null) Instance = this;
+            else Destroy(gameObject);
+
             if (spawners == null || spawners.Length == 0)
                 spawners = FindObjectsOfType<EnemySpawner>();
         }
@@ -132,6 +143,12 @@ namespace InfimaGames.LowPolyShooterPack
         private void SyncWaveNumberToClients(int waveNumber)
         {
             Debug.Log($"[Client UI] Current Game Round Updated to: {waveNumber}");
+            
+            // Sync the number for the client
+            currentWave = waveNumber;
+            
+            // Tell the UI to flash the new text!
+            OnWaveChanged?.Invoke(currentWave);
         }
     }
 }

@@ -1,8 +1,10 @@
 using UnityEngine;
+using PurrNet; // Added PurrNet
 
 namespace InfimaGames.LowPolyShooterPack
 {
-    public class AmmoPickUp : MonoBehaviour, IInteractable
+    // 1. Changed to NetworkBehaviour
+    public class AmmoPickUp : NetworkBehaviour, IInteractable 
     {
         [Header("Pickup Amount")]
         public int ammoAmount = 30;
@@ -15,55 +17,94 @@ namespace InfimaGames.LowPolyShooterPack
 
         public string GetInteractText()
         {
-            return $"Buy {ammoAmount} Ammo - {cost} Points";
+            // 2. Added the [E] prompt to match your UI
+            return $"[E] Buy Ammo - $ {cost}";
         }
 
         public void Interact(CharacterBehaviour user)
         {
-            // Get the player's ID (you may change this depending on your setup)
-            int playerId = 0;
+            NetworkBehaviour playerNetwork = user.GetComponent<NetworkBehaviour>();
+            if (playerNetwork == null || !playerNetwork.isOwner) return;
 
-            // Check score
-            int score = ScoreManager.Instance.GetScore(playerId);
-            if (score < cost)
-            {
-                Debug.Log("Not enough points!");
-                return;
-            }
-
-            // Get all weapons
+            // PRE-CHECK: Let's do your local check first to see if they even need ammo!
             WeaponBehaviour[] weapons = user.GetInventory().GetAllWeapons();
-            if (weapons == null)
-                return;
+            if (weapons == null) return;
 
-            bool addedAnyAmmo = false;
-
+            bool needsAmmo = false;
             foreach (WeaponBehaviour wb in weapons)
             {
                 Weapon w = wb as Weapon;
-                if (w == null)
-                    continue;
-
-                // Skip full weapons
-                if (w.IsReserveFull())
-                    continue;
-
-                w.AddReserveAmmunition(ammoAmount);
-                addedAnyAmmo = true;
+                if (w != null && !w.IsReserveFull())
+                {
+                    needsAmmo = true;
+                    break;
+                }
             }
 
-            if (!addedAnyAmmo)
+            if (!needsAmmo)
             {
                 Debug.Log("All weapons already full. Cannot buy ammo.");
                 return;
             }
 
-            // Deduct score
-            ScoreManager.Instance.AddPoints(playerId, -cost);
+            // Get ID and ask the server to process the purchase
+            int myPlayerId = playerNetwork.owner.HasValue ? (int)(ulong)playerNetwork.owner.Value.id : 0;
+            CmdTryBuyAmmo(myPlayerId);
+        }
 
-            // Destroy object
-            if (destroyOnPickup)
-                Destroy(gameObject);
+        // 3. SERVER LOGIC: Handle the points here
+        [ServerRpc(requireOwnership: false)]
+        private void CmdTryBuyAmmo(int buyerId)
+        {
+            // SpendPoints ensures they actually have the money
+            if (ScoreManager.Instance != null && ScoreManager.Instance.SpendPoints(buyerId, cost))
+            {
+                // Tell clients to apply the ammo
+                SyncGrantAmmo(buyerId);
+
+                // Destroy object on the server if it's a one-time drop
+                if (destroyOnPickup)
+                {
+                    Destroy(gameObject);
+                }
+            }
+            else
+            {
+                Debug.Log("Not enough points!");
+            }
+        }
+
+        // 4. SYNC LOGIC: Give the player the ammo across the network
+        [ObserversRpc]
+        private void SyncGrantAmmo(int buyerId)
+        {
+            Character targetPlayer = GetPlayerById(buyerId);
+            if (targetPlayer == null) return;
+
+            Inventory playerInventory = targetPlayer.GetInventory() as Inventory;
+            if (playerInventory == null) return;
+
+            // Apply your ammo logic!
+            foreach (WeaponBehaviour wb in playerInventory.GetAllWeapons())
+            {
+                Weapon w = wb as Weapon;
+                if (w == null) continue;
+
+                if (!w.IsReserveFull())
+                {
+                    w.AddReserveAmmunition(ammoAmount);
+                }
+            }
+        }
+
+        // Helper to find the right player
+        private Character GetPlayerById(int id)
+        {
+            foreach (Character p in FindObjectsOfType<Character>())
+            {
+                if (p.owner.HasValue && (int)(ulong)p.owner.Value.id == id) return p;
+            }
+            return null;
         }
     }
 }
