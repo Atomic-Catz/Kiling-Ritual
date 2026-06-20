@@ -706,23 +706,23 @@ MonoBehaviour:
       serializedVersion: 2
       x: 0
       y: 21
-      width: 1114
-      height: 645
-    m_Scale: {x: 0.58020836, y: 0.58020836}
-    m_Translation: {x: 556.99994, y: 322.5}
+      width: 1486
+      height: 912
+    m_Scale: {x: 0.7739583, y: 0.7739583}
+    m_Translation: {x: 743, y: 456}
     m_MarginLeft: 0
     m_MarginRight: 0
     m_MarginTop: 0
     m_MarginBottom: 0
     m_LastShownAreaInsideMargins:
       serializedVersion: 2
-      x: -959.9999
-      y: -555.8348
-      width: 1919.9999
-      height: 1111.6696
+      x: -960
+      y: -589.179
+      width: 1920
+      height: 1178.358
     m_MinimalGUI: 1
-  m_defaultScale: 0.58020836
-  m_LastWindowPixelSize: {x: 1114, y: 666}
+  m_defaultScale: 0.7739583
+  m_LastWindowPixelSize: {x: 1486, y: 933}
   m_ClearInEditMode: 1
   m_NoCameraWarning: 1
   m_LowResolutionForAspectRatios: 01000000000000000000
@@ -1415,9 +1415,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 752.65735, y: 463.43304, z: 409.04456}
+    m_Target: {x: 960, y: 540, z: 0}
     speed: 2
-    m_Value: {x: 940.11804, y: 530.29443, z: 1135.959}
+    m_Value: {x: 752.65735, y: 463.43304, z: 409.04456}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1463,17 +1463,17 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.0044998, y: 0.0015006433, z: 0.000005766752, w: 0.9999875}
+    m_Target: {x: 0, y: 0, z: 0, w: 1}
     speed: 2
-    m_Value: {x: -0.009297375, y: 0.021917118, z: -0.00015709997, w: -0.99975234}
+    m_Value: {x: 0.0044998005, y: -0.0015006434, z: -0.0000057667526, w: -0.99998754}
   m_Size:
-    m_Target: 713.0952
+    m_Target: 1101.4536
     speed: 2
-    m_Value: 627.4875
+    m_Value: 713.0952
   m_Ortho:
-    m_Target: 0
+    m_Target: 1
     speed: 2
-    m_Value: 1
+    m_Value: 0
   m_CameraSettings:
     m_Speed: 2
     m_SpeedNormalized: 1
@@ -1807,10 +1807,10 @@ MonoBehaviour:
       m_Data: 63748
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 29346
-    - m_Data: 50096
-    - m_Data: 50098
-    - m_Data: 50100
+    - m_Data: 29330
+    - m_Data: 45166
+    - m_Data: 45168
+    - m_Data: 45170
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1843,10 +1843,10 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 29346
-    - m_Data: 50096
-    - m_Data: 50098
-    - m_Data: 50100
+    - m_Data: 29330
+    - m_Data: 45166
+    - m_Data: 45168
+    - m_Data: 45170
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 

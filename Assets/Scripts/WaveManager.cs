@@ -114,6 +114,11 @@ namespace InfimaGames.LowPolyShooterPack
                 }
 
                 Debug.Log($"Wave {currentWave} Clear. Break Time!");
+                
+                // --- NEW: RESPAWN DEAD PLAYERS ---
+                RespawnDeadPlayers();
+                // ---------------------------------
+
                 SpawnTrader();
                 yield return new WaitForSeconds(breakDuration);
                 DespawnTrader();
@@ -137,6 +142,27 @@ namespace InfimaGames.LowPolyShooterPack
                 Destroy(activeTrader);
                 activeTrader = null; 
             } 
+        }
+
+        // ==========================================
+        // END OF ROUND RESPAWN LOGIC
+        // ==========================================
+        private void RespawnDeadPlayers()
+        {
+            CharacterHealth[] allPlayers = FindObjectsOfType<CharacterHealth>();
+            
+            // Use the trader spawn point as a safe place to bring them back, 
+            // or default to vector zero if no trader spawn exists.
+            Vector3 safeSpawnPos = traderSpawnPoint != null ? traderSpawnPoint.position : Vector3.zero;
+
+            foreach(var player in allPlayers)
+            {
+                // If they are bleeding out OR fully dead, bring them back!
+                if (player.isDowned.value || player.GetCurrentHealth() <= 0)
+                {
+                    player.RespawnPlayer(safeSpawnPos);
+                }
+            }
         }
 
         [ObserversRpc]

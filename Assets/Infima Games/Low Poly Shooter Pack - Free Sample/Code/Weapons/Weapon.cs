@@ -20,6 +20,18 @@ namespace InfimaGames.LowPolyShooterPack
         [Tooltip("The cost of the weapon.")] 
         public int weaponPrice = 1000;
 
+        // --- NEW: SHOTGUN SETTINGS ---
+        [Header("Shotgun Settings")]
+        [Tooltip("If checked, this weapon behaves like a shotgun firing multiple pellets simultaneously.")]
+        [SerializeField] private bool isShotgun = false;
+        
+        [Tooltip("The total number of individual pellets spawned per trigger pull.")]
+        [SerializeField] private int pelletCount = 8;
+        
+        [Tooltip("The max cone offset deviation for pellet spread trajectory.")]
+        [SerializeField] private float shotgunSpread = 0.05f;
+        // -----------------------------
+
         [Header("Firing")]
 
         [Tooltip("Is this weapon automatic? If yes, then holding down the firing button will continuously fire.")]
@@ -317,14 +329,6 @@ namespace InfimaGames.LowPolyShooterPack
             // Runs local particle systems and flashlights
             muzzleBehaviour.Effect();
 
-            Quaternion rotation = Quaternion.LookRotation(playerCamera.forward * 1000.0f - muzzleSocket.position);
-
-            if (Physics.Raycast(new Ray(playerCamera.position, playerCamera.forward),
-                out RaycastHit hit, maximumDistance, mask))
-            {
-                rotation = Quaternion.LookRotation(hit.point - muzzleSocket.position);
-            }
-
             bool trackingInstaKill = false;
             if (characterBehaviour != null)
             {
@@ -337,7 +341,48 @@ namespace InfimaGames.LowPolyShooterPack
             var networkCharacter = characterBehaviour as Character;
             if (networkCharacter != null && networkCharacter.isOwner)
             {
-                networkCharacter.CmdSpawnNetworkedProjectile(muzzleSocket.position, rotation, projectileImpulse, trackingInstaKill);
+                // --- UPDATED LOGIC: SHOTGUN CONE SPREAD HANDLING ---
+                if (isShotgun)
+                {
+                    // Establish baseline point where crosshair is pointing
+                    Vector3 baselineTargetPoint = playerCamera.position + playerCamera.forward * maximumDistance;
+                    if (Physics.Raycast(new Ray(playerCamera.position, playerCamera.forward), out RaycastHit hit, maximumDistance, mask))
+                    {
+                        baselineTargetPoint = hit.point;
+                    }
+
+                    // Compute true forward alignment from barrel tip to core target point
+                    Vector3 coreDirection = (baselineTargetPoint - muzzleSocket.position).normalized;
+
+                    // Loop through and spawn all individual pellets via server authority
+                    for (int i = 0; i < pelletCount; i++)
+                    {
+                        // Generate circular coordinates relative to camera space orientation vectors
+                        float randomSpreadX = UnityEngine.Random.Range(-shotgunSpread, shotgunSpread) * spreadMultiplier;
+                        float randomSpreadY = UnityEngine.Random.Range(-shotgunSpread, shotgunSpread) * spreadMultiplier;
+
+                        // Vector sum offsets applied cleanly onto baseline barrel orientation
+                        Vector3 randomizedPelletDirection = (coreDirection + (playerCamera.right * randomSpreadX) + (playerCamera.up * randomSpreadY)).normalized;
+                        Quaternion pelletRotation = Quaternion.LookRotation(randomizedPelletDirection);
+
+                        // Individually prompt network loop manager to dispatch physics instance
+                        networkCharacter.CmdSpawnNetworkedProjectile(muzzleSocket.position, pelletRotation, projectileImpulse, trackingInstaKill);
+                    }
+                }
+                else
+                {
+                    // Standard Single-Shot Trajectory Calculation
+                    Quaternion rotation = Quaternion.LookRotation(playerCamera.forward * 1000.0f - muzzleSocket.position);
+
+                    if (Physics.Raycast(new Ray(playerCamera.position, playerCamera.forward),
+                        out RaycastHit hit, maximumDistance, mask))
+                    {
+                        rotation = Quaternion.LookRotation(hit.point - muzzleSocket.position);
+                    }
+
+                    networkCharacter.CmdSpawnNetworkedProjectile(muzzleSocket.position, rotation, projectileImpulse, trackingInstaKill);
+                }
+                // -----------------------------------------------------
             }
         }
 

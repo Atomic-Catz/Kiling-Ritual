@@ -24,6 +24,12 @@ namespace InfimaGames.LowPolyShooterPack
             isGameOver.onChanged += OnGameOverChanged;
         }
 
+        private void Start()
+        {
+            // Ensure the screen is off when the game starts
+            if (gameOverScreen != null) gameOverScreen.SetActive(false);
+        }
+
         public void CheckGameOverCondition()
         {
             // Only the Server is allowed to declare a Game Over
@@ -37,7 +43,6 @@ namespace InfimaGames.LowPolyShooterPack
             foreach (var player in allPlayers)
             {
                 // If even ONE player is alive and NOT downed, the game continues!
-                // (We check if their health is > 0 just to be safe)
                 if (!player.isDowned.value && player.GetCurrentHealth() > 0)
                 {
                     allDefeated = false;
@@ -56,7 +61,10 @@ namespace InfimaGames.LowPolyShooterPack
             isGameOver.value = true;
             Debug.Log("[GameManager] ALL PLAYERS DOWN! GAME OVER!");
             
-            // TODO: Here is where you would freeze the zombies or trigger the cinematic music
+            // TODO: Optional Future Polish
+            // 1. Find all Enemy AI and force them into an "Idle" or "Cheer" animation
+            // 2. Stop the WaveManager from spawning new zombies
+            // 3. Play a spooky Game Over audio track
         }
 
         private void OnGameOverChanged(bool gameOver)
@@ -66,10 +74,28 @@ namespace InfimaGames.LowPolyShooterPack
                 // Show Game Over UI for everyone on the network
                 if (gameOverScreen != null) gameOverScreen.SetActive(true);
 
-                // Unlock the mouse so players can click "Main Menu" or "Restart"
+                // Unlock the mouse so players can click "Main Menu", "Restart", or "Quit"
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+
+                // Stop the local player from shooting/moving while looking at the menu
+                Character localPlayer = GetLocalPlayer();
+                if (localPlayer != null)
+                {
+                    localPlayer.SetMenuOpen(true);
+                }
             }
+        }
+
+        // Helper method to find the local player's character script
+        private Character GetLocalPlayer()
+        {
+            Character[] players = FindObjectsOfType<Character>();
+            foreach (var p in players)
+            {
+                if (p.isOwner) return p;
+            }
+            return null;
         }
     }
 }
