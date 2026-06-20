@@ -182,18 +182,27 @@ namespace InfimaGames.LowPolyShooterPack
             {
                 t += Time.deltaTime * 4f; 
                 
+                // 1. Drop and Tilt the Camera (This gives the player the visual effect of falling)
                 cameraWorld.transform.localPosition = Vector3.Lerp(cameraWorld.transform.localPosition, targetCamPos, t);
                 Vector3 camEuler = cameraWorld.transform.localEulerAngles;
                 camEuler.z = Mathf.LerpAngle(camEuler.z, targetRoll, t);
                 cameraWorld.transform.localEulerAngles = camEuler;
 
-                // Even though the arms are invisible, we still move the inventory down so audio/muzzles stay aligned
+                // 2. Drop the Inventory (for audio/muzzle flashes) BUT DO NOT ROTATE IT
                 inventory.transform.localPosition = Vector3.Lerp(inventory.transform.localPosition, targetInvPos, t);
-                Vector3 invEuler = inventory.transform.localEulerAngles;
-                invEuler.z = Mathf.LerpAngle(invEuler.z, targetRoll, t);
-                inventory.transform.localEulerAngles = invEuler;
 
                 yield return null;
+            }
+
+            // SAFETY SNAP: Guarantee perfect alignment when standing back up
+            if (!isDowned)
+            {
+                cameraWorld.transform.localPosition = defaultCameraLocalPos;
+                Vector3 finalCamEuler = cameraWorld.transform.localEulerAngles;
+                finalCamEuler.z = 0f;
+                cameraWorld.transform.localEulerAngles = finalCamEuler;
+
+                inventory.transform.localPosition = defaultInventoryLocalPos;
             }
         }
         
