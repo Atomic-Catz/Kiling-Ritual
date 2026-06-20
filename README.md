@@ -6,6 +6,8 @@ Welcome to the ultimate wave-based survival shooter! Work with your team to surv
 
 You need to use Radmin or Hamachi to play online with a friend. Just paste their IP address and press join once they host the game.
 
+# Disclaimer! This is a very very very very very early build.
+
 Download link: https://we.tl/t-cfMVbAaCk3yAouUA
 
 ###  The Core Loop
