@@ -2,7 +2,11 @@
 
 #  How to Play
 
-Welcome to the ultimate wave-based survival shooter! Your goal is simple: work with your team to survive as many rounds as possible against increasingly difficult hordes of enemies. 
+Welcome to the ultimate wave-based survival shooter! Work with your team to survive as many rounds as possible against increasingly difficult hordes of enemies. 
+
+You need to use Radmin or Hamachi to play online with a friend. Just paste their IP address and press join once they host the game.
+
+Download link: https://we.tl/t-cfMVbAaCk3yAouUA
 
 ###  The Core Loop
 *   **Survive the Wave:** Eliminate all enemies to clear the current round. Every wave, enemies spawn in greater numbers and with more health. Watch out for Boss rounds every 5 waves!
