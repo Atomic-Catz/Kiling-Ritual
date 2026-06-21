@@ -1702,7 +1702,7 @@ MonoBehaviour:
   pelletCount: 8
   shotgunSpread: 0.05
   automatic: 0
-  projectileImpulse: 400
+  projectileImpulse: 600
   roundsPerMinutes: 350
   mask:
     serializedVersion: 2

@@ -63893,7 +63893,6 @@ MonoBehaviour:
   _parent: {fileID: 0}
   _invertedPathToNearestParent: 
   _directChildren: []
-  gameOverScreen: {fileID: 1837550993}
   isGameOver:
     _value: 0
     _ownerAuth: 0
@@ -90505,8 +90504,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d7c6cd7945c5744d9f4e8bbf90b14b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PauseMenu
-  pauseUI: {fileID: 0}
+  pauseMainPanel: {fileID: 0}
+  optionsPanel: {fileID: 0}
+  audioTabPanel: {fileID: 0}
+  controlsTabPanel: {fileID: 0}
+  videoTabPanel: {fileID: 0}
   mainMenuSceneName: MainMenu
+  mainMixer: {fileID: 0}
+  sensitivitySlider: {fileID: 0}
+  invertYToggle: {fileID: 0}
+  resolutionDropdown: {fileID: 0}
+  qualityDropdown: {fileID: 0}
+  fullscreenToggle: {fileID: 0}
 --- !u!114 &2116753443
 MonoBehaviour:
   m_ObjectHideFlags: 0

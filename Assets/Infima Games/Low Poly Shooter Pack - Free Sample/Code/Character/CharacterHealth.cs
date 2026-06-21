@@ -22,13 +22,14 @@ namespace InfimaGames.LowPolyShooterPack
         public SyncVar<bool> isDowned = new SyncVar<bool>(false);
         public SyncVar<bool> isBeingRevived = new SyncVar<bool>(false);
         public SyncVar<float> bleedOutTime = new SyncVar<float>(45f);
+        
+        // isDead is a SyncVar so clients know they are dead, not revived!
+        public SyncVar<bool> isDead = new SyncVar<bool>(false);
 
         public event Action OnDeath;
         public event Action<bool> OnDownedStateChanged;
         public event Action<float, float> OnHealthChanged;
 
-        private bool isDead = false;
-        
         // Memorize exactly where the player spawned at the start of the match
         private Vector3 initialSpawnPosition;
 
@@ -45,8 +46,7 @@ namespace InfimaGames.LowPolyShooterPack
 
             if (isOwner) 
             {
-                OnDeath += HandleDeath;
-                // Ensure the grey screen is off when we spawn (if it linked fast enough)
+                // Ensure the grey screen is off when we spawn
                 if (downedUIContainer != null) downedUIContainer.SetActive(false);
             }
             
@@ -62,9 +62,8 @@ namespace InfimaGames.LowPolyShooterPack
         private void Update()
         {
             // SERVER: Manages the actual bleed-out clock
-            if (isServer && isDowned.value && !isDead)
+            if (isServer && isDowned.value && !isDead.value)
             {
-                // Pause the timer if a teammate is actively reviving them
                 if (!isBeingRevived.value)
                 {
                     bleedOutTime.value -= Time.deltaTime;
@@ -76,7 +75,7 @@ namespace InfimaGames.LowPolyShooterPack
             }
 
             // CLIENT (Owner): Updates the UI Timer on their screen
-            if (isOwner && isDowned.value && !isDead)
+            if (isOwner && isDowned.value && !isDead.value)
             {
                 if (bleedOutTimerText != null)
                 {
@@ -92,6 +91,9 @@ namespace InfimaGames.LowPolyShooterPack
 
         private void OnDownedSyncChanged(bool downed)
         {
+            // PREVENT "STAND UP" BUG: If they are dead, ignore the "undowned" signal!
+            if (isDead.value) return; 
+
             OnDownedStateChanged?.Invoke(downed);
 
             // Toggle the grey screen on/off only for the player who owns this body
@@ -103,14 +105,11 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void TakeDamage(float amount)
         {
-            // Don't take damage if they are already down or dead
-            if (!isServer || isDead || isDowned.value) return; 
+            if (!isServer || isDead.value || isDowned.value) return; 
             if (amount <= 0) return;
 
             currentHealth.value -= amount;
             currentHealth.value = Mathf.Clamp(currentHealth.value, 0, maxHealth);
-
-            Debug.Log($"[Server Health] {gameObject.name} took {amount} damage. Current health: {currentHealth.value}");
 
             if (currentHealth.value <= 0)
             {
@@ -120,64 +119,48 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void Heal(float amount)
         {
-            if (!isServer || isDead || isDowned.value) return; 
+            if (!isServer || isDead.value || isDowned.value) return; 
             if (amount <= 0) return;
 
             currentHealth.value += amount;
             currentHealth.value = Mathf.Clamp(currentHealth.value, 0, maxHealth);
-
-            Debug.Log($"[Server Health] Healed {amount}. Health: {currentHealth.value}");
         }
 
         private void EnterDownedState()
         {
-            // NEW: Check if this is a solo game. 
-            // If there is only 1 player, skip the downed state and die instantly!
             if (FindObjectsOfType<CharacterHealth>().Length <= 1)
             {
                 Die();
                 return;
             }
 
-            // Normal Multiplayer Logic
             isDowned.value = true;
             bleedOutTime.value = maxBleedOutTime;
-            Debug.Log($"[Server Health] {gameObject.name} is DOWNED!");
 
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.CheckGameOverCondition();
-            }
+            if (GameManager.Instance != null) GameManager.Instance.CheckGameOverCondition();
         }
 
         public void RevivePlayer()
         {
-            if (!isServer || isDead) return;
+            if (!isServer || isDead.value) return;
 
             isDowned.value = false;
             isBeingRevived.value = false;
             currentHealth.value = revivedHealth; 
-            Debug.Log($"[Server Health] {gameObject.name} was REVIVED!");
 
             ObserverFixReviveVisuals();
         }
 
         private void Die()
         {
-            if (isDead) return; 
-            isDead = true;
-            isDowned.value = false; // Triggers OnDownedSyncChanged(false), hiding the grey screen
-
-            Debug.Log($"[CharacterHealth] {gameObject.name} died completely!");
+            if (isDead.value) return; 
             
-            // Turn the player into a ghost on ALL screens so they can't shoot or move
+            isDead.value = true;
+            isDowned.value = false; 
+
+            // Tell all clients to execute the physical death and UI logic
             ObserverHandleDeath();
             
-            // Start Spectating immediately
-            GetComponent<PlayerSpectator>()?.StartSpectating();
-            
-            OnDeath?.Invoke();
-
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.CheckGameOverCondition();
@@ -187,7 +170,7 @@ namespace InfimaGames.LowPolyShooterPack
         [ObserversRpc]
         private void ObserverHandleDeath()
         {
-            // --- Freeze physics so we don't fall through the floor! ---
+            // Freeze physics so we don't fall through the floor
             Rigidbody rb = GetComponent<Rigidbody>();
             if (rb != null)
             {
@@ -202,7 +185,10 @@ namespace InfimaGames.LowPolyShooterPack
             var kinScript = GetComponent<CharacterKinematics>();
             if (kinScript != null) kinScript.enabled = false;
 
-            // Turn off all physical presence (body, guns, UI, colliders)
+            var playerInput = GetComponent<UnityEngine.InputSystem.PlayerInput>();
+            if (playerInput != null) playerInput.enabled = false;
+
+            // Turn off all physical presence
             Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
             foreach (var r in renderers) r.enabled = false;
 
@@ -211,11 +197,15 @@ namespace InfimaGames.LowPolyShooterPack
 
             Canvas[] canvases = GetComponentsInChildren<Canvas>(true);
             foreach (var canvas in canvases) canvas.enabled = false;
-        }
 
-        private void HandleDeath()
-        {
-            FindObjectOfType<DeathMenu>()?.Show();
+            // Only the owner of this dead body should open their menus and spectate
+            if (isOwner)
+            {
+                if (downedUIContainer != null) downedUIContainer.SetActive(false);
+                
+                GetComponent<PlayerSpectator>()?.StartSpectating();
+                OnDeath?.Invoke(); 
+            }
         }
 
         public float GetCurrentHealth() => currentHealth.value;
@@ -229,14 +219,10 @@ namespace InfimaGames.LowPolyShooterPack
         {
             if (!isServer) return;
 
-            isDead = false;
+            isDead.value = false;
             isDowned.value = false;
             isBeingRevived.value = false;
             currentHealth.value = maxHealth;
-
-            // TODO: Reset Points here when economy is built
-
-            Debug.Log($"[Server Health] {gameObject.name} was fully respawned!");
 
             // ALWAYS use the initialSpawnPosition instead of whatever the WaveManager says
             ObserverHandleFullRespawn(initialSpawnPosition);
@@ -247,63 +233,65 @@ namespace InfimaGames.LowPolyShooterPack
         {
             GetComponent<PlayerSpectator>()?.StopSpectating();
             
-            // Add a small vertical boost (+ 1.5f on the Y axis) to prevent clipping through floor
-            transform.position = correctSpawnPosition + (Vector3.up * 1.5f);
+            // Calculate the safe drop position
+            Vector3 spawnPos = correctSpawnPosition + (Vector3.up * 1.5f);
 
-            // Unfreeze physics so the player can walk again!
+            // ==========================================
+            // FIX: EXPLICIT PHYSICS TELEPORT
+            // We must force the Rigidbody to move its internal coordinates, 
+            // otherwise it will snap the player back to their dead body!
+            // ==========================================
             Rigidbody rb = GetComponent<Rigidbody>();
             if (rb != null)
             {
-                rb.isKinematic = false;
+                rb.isKinematic = true;          // Freeze it completely
+                rb.position = spawnPos;         // Move the physics body
+                transform.position = spawnPos;  // Move the visual transform
+                rb.isKinematic = false;         // Unfreeze it at the new location
             }
-
-            // --- FIX 1: VISIBLE WEAPONS ---
-            // Turn ALL renderers back on, no exceptions. 
-            // The Inventory turns GameObjects on/off, so having the renderer enabled is safe and required!
-            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
-            foreach (var r in renderers) 
+            else
             {
-                r.enabled = true;
+                transform.position = spawnPos;
             }
 
+            // Turn ALL renderers back on
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            foreach (var r in renderers) r.enabled = true;
+
+            // Turn Colliders and UI back on
             Collider[] colliders = GetComponentsInChildren<Collider>(true);
             foreach (var c in colliders) c.enabled = true;
             
             Canvas[] canvases = GetComponentsInChildren<Canvas>(true);
             foreach (var canvas in canvases) canvas.enabled = true;
 
+            // Turn control scripts back on
             var charScript = GetComponent<Character>();
             if (charScript != null) charScript.enabled = true;
 
             var kinScript = GetComponent<CharacterKinematics>();
             if (kinScript != null) kinScript.enabled = true;
 
+            var playerInput = GetComponent<UnityEngine.InputSystem.PlayerInput>();
+            if (playerInput != null) playerInput.enabled = true;
+
+            // Re-equip weapons to fix invisibility
             var inventory = GetComponent<Inventory>();
             if (inventory != null) 
             {
-                // Reset the inventory back to its starting state
                 inventory.Init(); 
-                
-                // Force the inventory to officially equip the current weapon
                 int currentIndex = inventory.GetEquippedIndex();
                 inventory.Equip(currentIndex);
             }
 
             ObserverFixReviveVisuals();
             
-            // --- FIX 2 & 3: UI AND CURSOR FIXES FOR THE OWNER ---
-            // We only want to hide the UI and lock the mouse for the person who actually respawned
+            // Fix the UI and Cursor exclusively for the person respawning
             if (isOwner)
             {
-                // Find the Death UI and turn it off
                 var deathMenu = FindObjectOfType<DeathMenu>(true);
-                if (deathMenu != null)
-                {
-                    // Most Infima menus can just be deactivated
-                    deathMenu.gameObject.SetActive(false); 
-                }
+                if (deathMenu != null) deathMenu.gameObject.SetActive(false); 
 
-                // Re-lock the mouse cursor so you can aim
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
             }
