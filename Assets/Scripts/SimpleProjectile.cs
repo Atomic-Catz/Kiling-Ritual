@@ -1,4 +1,5 @@
 using UnityEngine;
+using PurrNet; // REQUIRED to check the global server state
 
 public class SimpleProjectile : MonoBehaviour
 {
@@ -42,6 +43,21 @@ public class SimpleProjectile : MonoBehaviour
             return; // Pass through allies like a ghost
         }
 
+        // ==========================================
+        // MULTIPLAYER FIX: CLIENT VISUAL DESTRUCTION
+        // ==========================================
+        // If we are a client, we ONLY destroy the visual effect on impact. 
+        // We DO NOT calculate damage, otherwise the player takes 2x, 3x, or 4x damage!
+        if (NetworkManager.main != null && !NetworkManager.main.isServer)
+        {
+            Destroy(gameObject); 
+            return;
+        }
+
+        // ==========================================
+        // SERVER ONLY DAMAGE LOGIC
+        // ==========================================
+        
         // 3. Check if we hit the Player
         var ch = other.GetComponentInParent<InfimaGames.LowPolyShooterPack.CharacterHealth>();
         if (ch != null)

@@ -150,15 +150,19 @@ namespace InfimaGames.LowPolyShooterPack
         private void RespawnDeadPlayers()
         {
             CharacterHealth[] allPlayers = FindObjectsOfType<CharacterHealth>();
-            
-            // Use the trader spawn point as a safe place to bring them back, 
-            // or default to vector zero if no trader spawn exists.
             Vector3 safeSpawnPos = traderSpawnPoint != null ? traderSpawnPoint.position : Vector3.zero;
 
             foreach(var player in allPlayers)
             {
-                // If they are bleeding out OR fully dead, bring them back!
-                if (player.isDowned.value || player.GetCurrentHealth() <= 0)
+                // If they are crawling on the floor, DO NOTHING. 
+                // Their teammates must manually revive them during the break!
+                if (player.isDowned.value)
+                {
+                    continue; 
+                }
+                
+                // If they are completely dead and spectating, bring them back as normal.
+                if (player.GetCurrentHealth() <= 0)
                 {
                     player.RespawnPlayer(safeSpawnPos);
                 }

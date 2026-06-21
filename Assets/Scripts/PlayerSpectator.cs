@@ -2,6 +2,7 @@ using UnityEngine;
 using PurrNet;
 using System.Collections.Generic;
 using TMPro;
+using UnityEngine.InputSystem; // REQUIRED for Infima's Input System
 
 namespace InfimaGames.LowPolyShooterPack
 {
@@ -58,9 +59,12 @@ namespace InfimaGames.LowPolyShooterPack
         {
             if (!isOwner || !isSpectating) return;
 
-            // Left and Right click to cycle players
-            if (Input.GetMouseButtonDown(0)) CycleSpectator(1);
-            if (Input.GetMouseButtonDown(1)) CycleSpectator(-1);
+            // FIX 1: Use the New Input System so clients can actually click!
+            if (Mouse.current != null)
+            {
+                if (Mouse.current.leftButton.wasPressedThisFrame) CycleSpectator(1);
+                if (Mouse.current.rightButton.wasPressedThisFrame) CycleSpectator(-1);
+            }
         }
 
         private void LateUpdate()
@@ -70,18 +74,30 @@ namespace InfimaGames.LowPolyShooterPack
             if (alivePlayers.Count == 0 || alivePlayers[currentIndex] == null)
             {
                 RefreshAlivePlayers();
-                return; 
+                if (alivePlayers.Count == 0) return; 
             }
 
-            // Glue our camera directly to the target player's camera position and rotation
-            Transform targetCam = alivePlayers[currentIndex].GetCameraWorld().transform;
-            myCam.transform.position = targetCam.position;
-            myCam.transform.rotation = targetCam.rotation;
+            Character target = alivePlayers[currentIndex];
+
+            // FIX 2: Safely find the target's camera transform, even if the camera is disabled on this client!
+            Camera targetCam = target.GetComponentInChildren<Camera>(true);
+            
+            if (targetCam != null)
+            {
+                myCam.transform.position = targetCam.transform.position;
+                myCam.transform.rotation = targetCam.transform.rotation;
+            }
+            else
+            {
+                // Bulletproof Fallback: Put the camera at their head height
+                myCam.transform.position = target.transform.position + new Vector3(0, 1.5f, 0);
+                myCam.transform.rotation = target.transform.rotation;
+            }
 
             // Update UI to show who we are watching
             if (spectatingNameText != null)
             {
-                string targetName = alivePlayers[currentIndex].gameObject.name.Replace("Player_", "");
+                string targetName = target.gameObject.name.Replace("Player_", "").Replace("(Clone)", "");
                 spectatingNameText.text = $"Spectating: {targetName}";
             }
         }
@@ -109,8 +125,8 @@ namespace InfimaGames.LowPolyShooterPack
 
                 var health = c.GetComponent<CharacterHealth>();
                 
-                // Only spectate people who are not completely dead (downed is okay)
-                if (health != null && health.GetCurrentHealth() > 0)
+                // FIX 3: Rely on the SyncVar we just created!
+                if (health != null && !health.isDead.value)
                 {
                     alivePlayers.Add(c);
                 }

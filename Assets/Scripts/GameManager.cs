@@ -8,10 +8,6 @@ namespace InfimaGames.LowPolyShooterPack
         // Singleton pattern so other scripts can easily find it
         public static GameManager Instance;
 
-        [Header("UI")]
-        [Tooltip("The screen that pops up when everyone dies.")]
-        [SerializeField] private GameObject gameOverScreen;
-
         // The network variable that tells everyone the game is lost
         [SerializeField] private SyncVar<bool> isGameOver = new SyncVar<bool>(false);
 
@@ -22,12 +18,6 @@ namespace InfimaGames.LowPolyShooterPack
 
             // Listen for when the server flips this to true
             isGameOver.onChanged += OnGameOverChanged;
-        }
-
-        private void Start()
-        {
-            // Ensure the screen is off when the game starts
-            if (gameOverScreen != null) gameOverScreen.SetActive(false);
         }
 
         public void CheckGameOverCondition()
@@ -42,8 +32,8 @@ namespace InfimaGames.LowPolyShooterPack
 
             foreach (var player in allPlayers)
             {
-                // If even ONE player is alive and NOT downed, the game continues!
-                if (!player.isDowned.value && player.GetCurrentHealth() > 0)
+                // If even ONE player is NOT downed and NOT dead, the game continues!
+                if (!player.isDowned.value && !player.isDead.value)
                 {
                     allDefeated = false;
                     break;
@@ -60,29 +50,25 @@ namespace InfimaGames.LowPolyShooterPack
         {
             isGameOver.value = true;
             Debug.Log("[GameManager] ALL PLAYERS DOWN! GAME OVER!");
-            
-            // TODO: Optional Future Polish
-            // 1. Find all Enemy AI and force them into an "Idle" or "Cheer" animation
-            // 2. Stop the WaveManager from spawning new zombies
-            // 3. Play a spooky Game Over audio track
         }
 
         private void OnGameOverChanged(bool gameOver)
         {
             if (gameOver)
             {
-                // Show Game Over UI for everyone on the network
-                if (gameOverScreen != null) gameOverScreen.SetActive(true);
-
-                // Unlock the mouse so players can click "Main Menu", "Restart", or "Quit"
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
+                // Tell the global DeathMenu to show itself on this client!
+                DeathMenu deathMenu = FindObjectOfType<DeathMenu>(true);
+                if (deathMenu != null)
+                {
+                    deathMenu.Show();
+                }
 
                 // Stop the local player from shooting/moving while looking at the menu
                 Character localPlayer = GetLocalPlayer();
                 if (localPlayer != null)
                 {
-                    localPlayer.SetMenuOpen(true);
+                    var input = localPlayer.GetComponent<UnityEngine.InputSystem.PlayerInput>();
+                    if (input != null) input.enabled = false;
                 }
             }
         }

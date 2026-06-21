@@ -69,10 +69,10 @@ namespace InfimaGames.LowPolyShooterPack
             }
         }
 
-        private void OnEnable()
+        private void Start()
         {
-            // CRITICAL FIX: Use the inherited isServer property directly 
-            // instead of trying to look up the server symbol on the manager.
+            // Network frameworks need a split-second to assign "isServer". 
+            // By the time Start() runs, the server authority is securely established.
             if (isServer)
             {
                 buffCoroutine = StartCoroutine(BuffUpdateRoutine());
@@ -94,7 +94,6 @@ namespace InfimaGames.LowPolyShooterPack
             var wait = new WaitForSecondsRealtime(updateRate);
             while (true)
             {
-                // Dynmically target the closest client machine
                 FindClosestPlayer();
                 TickAI();
                 yield return wait;
@@ -199,11 +198,9 @@ namespace InfimaGames.LowPolyShooterPack
 
         private void MoveToPoint(Vector3 point)
         {
-            if (NavMesh.SamplePosition(point, out NavMeshHit hit, 3f, NavMesh.AllAreas))
-            {
-                agent.isStopped = false;
-                agent.SetDestination(hit.position);
-            }
+            // SetDestination handles nearest-valid-point logic automatically and perfectly.
+            agent.isStopped = false;
+            agent.SetDestination(point);
         }
 
         private void HandleAttackLogic(float dist)
@@ -226,21 +223,30 @@ namespace InfimaGames.LowPolyShooterPack
             if (Time.time - lastFireTime < (1f / Mathf.Max(0.0001f, fireRate))) return;
             lastFireTime = Time.time;
 
-            if (projectilePrefab == null || projectileSpawn == null) return;
-
-            // PurrNet automatically intercepts this Instantiate call on the server to spawn it on all clients
-            GameObject proj = Instantiate(projectilePrefab, projectileSpawn.position, Quaternion.LookRotation(dir));
-            var rb = proj.GetComponent<Rigidbody>();
-            if (rb != null) rb.linearVelocity = dir * projectileSpeed;
-
-            // Trigger the attack animation across all connected observer instances
-            SyncAttackAnimation();
+            SyncAttackAndProjectile(origin, dir);
         }
 
         [ObserversRpc]
-        private void SyncAttackAnimation()
+        private void SyncAttackAndProjectile(Vector3 origin, Vector3 dir)
         {
+            // 1. Play the animation on all screens
             if (animator != null) animator.SetTrigger("IsAttacking");
+
+            // 2. Spawn a local copy of the projectile for EVERY player
+            if (projectilePrefab != null)
+            {
+                Vector3 spawnPos = (projectileSpawn != null) ? projectileSpawn.position : origin;
+                
+                GameObject proj = Instantiate(projectilePrefab, spawnPos, Quaternion.LookRotation(dir));
+                
+                // --- ASSIGN THE OWNER! ---
+                // This guarantees the fireball ignores the Commander's own colliders
+                var projScript = proj.GetComponent<SimpleProjectile>();
+                if (projScript != null) projScript.owner = gameObject;
+
+                var rb = proj.GetComponent<Rigidbody>();
+                if (rb != null) rb.linearVelocity = dir * projectileSpeed;
+            }
         }
 
         private void UpdateBuffAura()
@@ -309,10 +315,7 @@ namespace InfimaGames.LowPolyShooterPack
             if (ScoreManager.Instance != null) 
                 ScoreManager.Instance.AddPoints(0, pointsOnDeath);
 
-            // Notify everyone to switch off navigation loops and activate ragdoll models synchronously
             SyncDeathVisuals();
-
-            // PurrNet automatically intercepts Destroy() calls on the server to completely clear the object network wide
             Destroy(gameObject, 5f);
         }
 
