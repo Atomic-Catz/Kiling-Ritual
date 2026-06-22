@@ -26,6 +26,7 @@ You are heavily reliant on your team to make it to the higher rounds.
 | Action | Key / Input |
 | :--- | :--- |
 | **Movement** | `W` `A` `S` `D` |
+|**Sprint**|`Shift`|
 | **Fire Weapon** | `Left Mouse Button` |
 | **Aim Down Sights** | `Right Mouse Button` |
 | **Reload** | `R` |
