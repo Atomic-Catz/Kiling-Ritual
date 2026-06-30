@@ -11,6 +11,11 @@ namespace InfimaGames.LowPolyShooterPack
         // The network variable that tells everyone the game is lost
         [SerializeField] private SyncVar<bool> isGameOver = new SyncVar<bool>(false);
 
+        // --- NEW: Audio Manager Reference ---
+        [Header("Audio")]
+        public WaveMusicManager musicManager;
+        // ------------------------------------
+
         private void Awake()
         {
             if (Instance == null) Instance = this;
@@ -56,6 +61,13 @@ namespace InfimaGames.LowPolyShooterPack
         {
             if (gameOver)
             {
+                // --- NEW: Trigger the Game Over music locally on all clients! ---
+                if (musicManager != null)
+                {
+                    musicManager.StartGameOverMusic();
+                }
+                // ----------------------------------------------------------------
+
                 // Tell the global DeathMenu to show itself on this client!
                 DeathMenu deathMenu = FindObjectOfType<DeathMenu>(true);
                 if (deathMenu != null)

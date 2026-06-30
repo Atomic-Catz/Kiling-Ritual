@@ -2634,6 +2634,7 @@ GameObject:
   - component: {fileID: 686267334390167623}
   - component: {fileID: 6041711017776664817}
   - component: {fileID: 8219212780971735570}
+  - component: {fileID: 2172088024448559387}
   m_Layer: 10
   m_Name: PlayerP
   m_TagString: Player
@@ -3156,6 +3157,19 @@ MonoBehaviour:
   maxHealth: 100
   maxBleedOutTime: 45
   revivedHealth: 50
+  downedUIContainer: {fileID: 0}
+  bleedOutTimerText: {fileID: 0}
+  voiceSource: {fileID: 2172088024448559387}
+  damageGrunts:
+  - {fileID: 8300000, guid: a74ecad4f9164504e9cd593d8a76a70a, type: 3}
+  - {fileID: 8300000, guid: a03c5cfa733f0944796011abbb9a3ecc, type: 3}
+  - {fileID: 8300000, guid: 4d3daeee7cae2294c8ed5db1a7b5174f, type: 3}
+  - {fileID: 8300000, guid: 73469d4f44f54cd4bb8c4a2c53fd5cdc, type: 3}
+  - {fileID: 8300000, guid: ccc1885516f838246abc49f26de4a080, type: 3}
+  easterEggDamageGrunt: {fileID: 8300000, guid: c8970175ccc713d4499601153a135b24,
+    type: 3}
+  easterEggChance: 5
+  painCooldown: 1
   currentHealth:
     _value: 100
     _ownerAuth: 0
@@ -3170,6 +3184,10 @@ MonoBehaviour:
     _sendIntervalInSeconds: 0
   bleedOutTime:
     _value: 45
+    _ownerAuth: 0
+    _sendIntervalInSeconds: 0
+  isDead:
+    _value: 0
     _ownerAuth: 0
     _sendIntervalInSeconds: 0
 --- !u!114 &686267334390167623
@@ -3253,6 +3271,104 @@ MonoBehaviour:
   _characterControllerPatch: 0
   _ownerAuth: 1
   _interpolationTiming: 0
+--- !u!82 &2172088024448559387
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6386732213705425414}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 7654324354699753918, guid: 487ffc65c75428c47ab8d991ce9e0968,
+    type: 2}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.6
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 0
+  MinDistance: 2
+  MaxDistance: 15
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 1
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.5
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &6467192901043720777
 GameObject:
   m_ObjectHideFlags: 0
