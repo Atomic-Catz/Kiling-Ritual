@@ -2301,6 +2301,9 @@ GameObject:
   - component: {fileID: 8614344065228300270}
   - component: {fileID: 4145729158274754034}
   - component: {fileID: 1416204983689841429}
+  - component: {fileID: 651522082316689915}
+  - component: {fileID: 1884665395598077473}
+  - component: {fileID: 2950664069480285064}
   m_Layer: 0
   m_Name: Trader
   m_TagString: Untagged
@@ -2404,6 +2407,160 @@ MonoBehaviour:
   _characterControllerPatch: 0
   _ownerAuth: 1
   _interpolationTiming: 0
+--- !u!82 &651522082316689915
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3909031464297897098}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 7654324354699753918, guid: 487ffc65c75428c47ab8d991ce9e0968,
+    type: 2}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 0.6
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 0
+  MinDistance: 2
+  MaxDistance: 15
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 1
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.125
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!135 &1884665395598077473
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3909031464297897098}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 10
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &2950664069480285064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3909031464297897098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de4cbf6dbe826454bbb9bc68b2092318, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InfimaGames.LowPolyShooterPack.TraderVoiceManager
+  _networkRules: {fileID: 0}
+  _visitiblityRules: {fileID: 0}
+  _isSetup: 0
+  _prefabId: -2147483648
+  _componentIndex: -2147483648
+  _shouldBePooled: 0
+  _parent: {fileID: 0}
+  _invertedPathToNearestParent: 
+  _directChildren: []
+  voiceSource: {fileID: 651522082316689915}
+  greetingLines:
+  - {fileID: 8300000, guid: 35c04423a698dad448bc9fb532484059, type: 3}
+  - {fileID: 8300000, guid: f207fba886a81a44f8dbd27cd50af5c7, type: 3}
+  - {fileID: 8300000, guid: ec1f67959e579fa42a7a305d9bb8b01f, type: 3}
+  purchaseSuccessLines:
+  - {fileID: 8300000, guid: 6da8612063b97154a96a6659adbd07d8, type: 3}
+  - {fileID: 8300000, guid: fa6f2514b0639b141876d96cadebb86a, type: 3}
+  - {fileID: 8300000, guid: c8adf99deb969b1468adf7158d4bc48d, type: 3}
+  notEnoughMoneyLines:
+  - {fileID: 8300000, guid: b1e51ee42d86045488f3a3473dd0b753, type: 3}
+  - {fileID: 8300000, guid: 7a01a593acbee77488231f979e7834a1, type: 3}
+  - {fileID: 8300000, guid: a57fedc349b08d3419f0c823c97d610b, type: 3}
+  - {fileID: 8300000, guid: bfbced34194ec964c869fe516ec3be1c, type: 3}
 --- !u!1 &4102323513404971832
 GameObject:
   m_ObjectHideFlags: 0
@@ -2753,6 +2910,9 @@ MonoBehaviour:
   weaponName: New Weapon
   isPurchased: 0
   weaponPrice: 1000
+  isShotgun: 0
+  pelletCount: 8
+  shotgunSpread: 0.05
   automatic: 0
   projectileImpulse: 400
   roundsPerMinutes: 500
@@ -5864,6 +6024,9 @@ MonoBehaviour:
   weaponName: Shotgun
   isPurchased: 0
   weaponPrice: 1000
+  isShotgun: 0
+  pelletCount: 8
+  shotgunSpread: 0.05
   automatic: 0
   projectileImpulse: 400
   roundsPerMinutes: 600
@@ -7654,6 +7817,9 @@ MonoBehaviour:
   weaponName: New Weapon
   isPurchased: 0
   weaponPrice: 1000
+  isShotgun: 0
+  pelletCount: 8
+  shotgunSpread: 0.05
   automatic: 1
   projectileImpulse: 400
   roundsPerMinutes: 600

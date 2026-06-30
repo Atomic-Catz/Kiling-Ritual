@@ -37,14 +37,34 @@ namespace InfimaGames.LowPolyShooterPack
             {
                 Debug.Log($"[Server] Player {buyerId} successfully purchased {weaponName}!");
                 
+                // --- NEW: Trigger Trader Success Voice ---
+                // The server successfully took the money, so we trigger the RPC on the voice manager
+                TraderVoiceManager traderVoice = FindObjectOfType<TraderVoiceManager>();
+                if (traderVoice != null) traderVoice.PlayPurchaseSuccessRPC();
+                // -----------------------------------------
+
                 GrantWeaponOwnership(buyerId);
                 SyncGrantWeapon(buyerId);
             }
             else
             {
                 Debug.LogWarning($"[Server] Player {buyerId} cannot afford {weaponName}!");
+
+                // --- NEW: Trigger Trader Rejection Voice ---
+                // The server rejected the purchase, so we tell the clients to play the rejection audio
+                SyncPurchaseFailed();
+                // -------------------------------------------
             }
         }
+
+        // --- NEW: ObserversRpc for Failed Purchases ---
+        [ObserversRpc]
+        private void SyncPurchaseFailed()
+        {
+            TraderVoiceManager traderVoice = FindObjectOfType<TraderVoiceManager>();
+            if (traderVoice != null) traderVoice.PlayNotEnoughMoneyLocal();
+        }
+        // ----------------------------------------------
 
         [ObserversRpc]
         private void SyncGrantWeapon(int buyerId)

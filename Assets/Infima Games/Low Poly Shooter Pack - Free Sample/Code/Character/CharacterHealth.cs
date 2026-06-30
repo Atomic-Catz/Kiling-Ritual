@@ -17,6 +17,20 @@ namespace InfimaGames.LowPolyShooterPack
         [HideInInspector] public GameObject downedUIContainer;
         [HideInInspector] public TMPro.TextMeshProUGUI bleedOutTimerText;
 
+        // --- UPDATED: AUDIO SETTINGS ---
+        [Header("Audio Settings")]
+        public AudioSource voiceSource;
+        [Tooltip("The standard sounds played when taking damage.")]
+        public AudioClip[] damageGrunts;
+        
+        [Tooltip("The rare easter egg sound.")]
+        public AudioClip easterEggDamageGrunt;
+        [Range(0f, 100f)] public float easterEggChance = 5f; // 5% chance by default
+        
+        public float painCooldown = 1.0f;
+        private float lastPainTime = -10f;
+        // -------------------------------
+
         // --- NETWORK VARIABLES ---
         [SerializeField] private SyncVar<float> currentHealth = new SyncVar<float>(100f);
         public SyncVar<bool> isDowned = new SyncVar<bool>(false);
@@ -111,7 +125,11 @@ namespace InfimaGames.LowPolyShooterPack
             currentHealth.value -= amount;
             currentHealth.value = Mathf.Clamp(currentHealth.value, 0, maxHealth);
 
-            if (currentHealth.value <= 0)
+            if (currentHealth.value > 0)
+            {
+                SyncDamageSound();
+            }
+            else
             {
                 EnterDownedState();
             }
@@ -160,13 +178,45 @@ namespace InfimaGames.LowPolyShooterPack
 
             // Tell all clients to execute the physical death and UI logic
             ObserverHandleDeath();
-            
+
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.CheckGameOverCondition();
             }
         }
 
+        // ==========================================
+        // AUDIO RPCs
+        // ==========================================
+        [ObserversRpc]
+        private void SyncDamageSound()
+        {
+            if (voiceSource == null) return;
+
+            if (Time.time >= lastPainTime + painCooldown)
+            {
+                // Roll a random number between 0 and 100
+                float roll = UnityEngine.Random.Range(0f, 100f);
+
+                // If the roll is within our easter egg chance, play the rare sound
+                if (easterEggDamageGrunt != null && roll <= easterEggChance)
+                {
+                    voiceSource.PlayOneShot(easterEggDamageGrunt);
+                }
+                // Otherwise, play a normal grunt (if we have any)
+                else if (damageGrunts != null && damageGrunts.Length > 0)
+                {
+                    int randomIndex = UnityEngine.Random.Range(0, damageGrunts.Length);
+                    voiceSource.PlayOneShot(damageGrunts[randomIndex]);
+                }
+
+                lastPainTime = Time.time;
+            }
+        }
+
+        // ==========================================
+        // DEATH AND RESPAWN LOGIC
+        // ==========================================
         [ObserversRpc]
         private void ObserverHandleDeath()
         {
@@ -211,10 +261,6 @@ namespace InfimaGames.LowPolyShooterPack
         public float GetCurrentHealth() => currentHealth.value;
         public float GetMaxHealth() => maxHealth;
 
-        // ==========================================
-        // END OF ROUND RESPAWN LOGIC
-        // ==========================================
-        
         public void RespawnPlayer(Vector3 spawnPosition = default)
         {
             if (!isServer) return;
@@ -236,18 +282,13 @@ namespace InfimaGames.LowPolyShooterPack
             // Calculate the safe drop position
             Vector3 spawnPos = correctSpawnPosition + (Vector3.up * 1.5f);
 
-            // ==========================================
-            // FIX: EXPLICIT PHYSICS TELEPORT
-            // We must force the Rigidbody to move its internal coordinates, 
-            // otherwise it will snap the player back to their dead body!
-            // ==========================================
             Rigidbody rb = GetComponent<Rigidbody>();
             if (rb != null)
             {
-                rb.isKinematic = true;          // Freeze it completely
-                rb.position = spawnPos;         // Move the physics body
-                transform.position = spawnPos;  // Move the visual transform
-                rb.isKinematic = false;         // Unfreeze it at the new location
+                rb.isKinematic = true;          
+                rb.position = spawnPos;         
+                transform.position = spawnPos;  
+                rb.isKinematic = false;         
             }
             else
             {
@@ -296,10 +337,6 @@ namespace InfimaGames.LowPolyShooterPack
                 Cursor.visible = false;
             }
         }
-
-        // ==========================================
-        // ANIMATION FIX
-        // ==========================================
         
         [ObserversRpc]
         private void ObserverFixReviveVisuals()

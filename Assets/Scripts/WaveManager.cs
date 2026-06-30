@@ -34,6 +34,11 @@ namespace InfimaGames.LowPolyShooterPack
         public float countMultiplier = 1.15f;
         public float healthMultiplier = 1.1f;
 
+        // --- NEW: Audio Manager Reference ---
+        [Header("Audio")]
+        public WaveMusicManager musicManager;
+        // ------------------------------------
+
         // Made public so the UI can check it when it first loads!
         public int currentWave = 0;
         private bool loopInitialized = false;
@@ -83,7 +88,7 @@ namespace InfimaGames.LowPolyShooterPack
 
                 Debug.Log($"<color=red>Network Wave {currentWave} Started!</color> {(isBossWave ? "<b>BOSS WAVE!</b>" : "")}");
 
-                // Update UI on all players
+                // Update UI and trigger Combat Music on all players
                 SyncWaveNumberToClients(currentWave);
 
                 int enemiesPerSpawner = totalEnemiesForWave / spawners.Length;
@@ -120,6 +125,10 @@ namespace InfimaGames.LowPolyShooterPack
                 // ---------------------------------
 
                 SpawnTrader();
+                
+                // Trigger Break Music on all clients
+                SyncBreakToClients();
+
                 yield return new WaitForSeconds(breakDuration);
                 DespawnTrader();
             }
@@ -179,6 +188,23 @@ namespace InfimaGames.LowPolyShooterPack
             
             // Tell the UI to flash the new text!
             OnWaveChanged?.Invoke(currentWave);
+
+            // Trigger the Combat Music locally for this specific client
+            if (musicManager != null)
+            {
+                musicManager.StartWaveMusic();
+            }
+        }
+
+        // --- NEW: Tell all clients to play the break music ---
+        [ObserversRpc]
+        private void SyncBreakToClients()
+        {
+            // Trigger the Break Music locally for this specific client
+            if (musicManager != null)
+            {
+                musicManager.StartBreakMusic();
+            }
         }
     }
 }
