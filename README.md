@@ -8,7 +8,7 @@ You need to use Radmin or Hamachi to play online with a friend. Just paste their
 
 # Disclaimer! This is a very very very very very early build.
 
-Download link: [https://we.tl/t-cfMVbAaCk3yAouUA](https://meawzdev.itch.io/killing-ritual) pass:KillingRitualPF
+Download link: [https://we.tl/t-cfMVbAaCk3yAouUA](https://meawzdev.itch.io/killing-ritual)
 
 ###  The Core Loop
 *   **Survive the Wave:** Eliminate all enemies to clear the current round. Every wave, enemies spawn in greater numbers and with more health. Watch out for Boss rounds every 5 waves!
