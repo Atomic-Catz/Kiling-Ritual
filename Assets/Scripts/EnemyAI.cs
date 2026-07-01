@@ -23,6 +23,18 @@ namespace InfimaGames.LowPolyShooterPack
         [Header("Score Settings")]
         public int pointsOnDeath = 10;
 
+        // --- SIMPLIFIED: JUST ONE SOUND ---
+        [Header("Audio")]
+        public AudioSource audioSource;
+        [Tooltip("The single sound that plays randomly while the enemy is alive.")]
+        public AudioClip occasionalSound;
+        
+        [Tooltip("How often (in seconds) the zombie should randomly play the sound.")]
+        public float minSoundDelay = 4f;
+        public float maxSoundDelay = 10f;
+        private float nextSoundTime = 0f;
+        // ----------------------------------
+
         [Header("Attack Settings")]
         public float attackRange = 2f;
         public float sightRange = 15f;
@@ -75,6 +87,12 @@ namespace InfimaGames.LowPolyShooterPack
                 enabled = false;
                 Debug.LogWarning($"{name} AI disabled: NavMeshAgent not on NavMesh!");
             }
+
+            // Set the first random sound timer
+            if (isServer)
+            {
+                nextSoundTime = Time.time + Random.Range(minSoundDelay, maxSoundDelay);
+            }
         }
 
         private void Update()
@@ -82,6 +100,14 @@ namespace InfimaGames.LowPolyShooterPack
             // CRITICAL NETWORK GUARD: AI decision loops must remain strictly Server Authoritative
             if (!isServer || isDead) return;
             if (agent == null || !agent.isOnNavMesh) return;
+
+            // --- NEW: OCCASIONAL SOUND LOGIC ---
+            if (Time.time >= nextSoundTime)
+            {
+                SyncOccasionalSoundRpc();
+                nextSoundTime = Time.time + Random.Range(minSoundDelay, maxSoundDelay);
+            }
+            // -----------------------------------
 
             // Recalculate which player window is closer (ignoring downed players!)
             FindClosestPlayer();
@@ -114,7 +140,6 @@ namespace InfimaGames.LowPolyShooterPack
                 }
             }
 
-            // Only check for attack/sight if we actually have a valid player target!
             if (player != null)
             {
                 playerInSight = Physics.CheckSphere(transform.position, sightRange, isPlayer);
@@ -178,7 +203,6 @@ namespace InfimaGames.LowPolyShooterPack
             {
                 if (p == null) continue;
 
-                // THE FILTER: Skip this player if they are downed or dead!
                 if (p.isDowned.value || p.GetCurrentHealth() <= 0)
                 {
                     continue;
@@ -198,7 +222,6 @@ namespace InfimaGames.LowPolyShooterPack
             }
             else
             {
-                // If every single player is downed, clear the target completely!
                 player = null;
             }
         }
@@ -353,9 +376,6 @@ namespace InfimaGames.LowPolyShooterPack
             {
                 multiplier = 3;
             }
-
-            Debug.Log(
-                $"Enemy died! Attacker ID is: {lastAttackerId}. ScoreManager exists: {ScoreManager.Instance != null}");
             
             if (ScoreManager.Instance != null)
                 ScoreManager.Instance.AddPoints(lastAttackerId, pointsOnDeath * multiplier);
@@ -388,7 +408,23 @@ namespace InfimaGames.LowPolyShooterPack
 
         #endregion
 
+        #region AUDIO NETWORK LOGIC
+
+        // --- NEW: Single Audio RPC ---
+        [ObserversRpc]
+        private void SyncOccasionalSoundRpc()
+        {
+            if (audioSource != null && occasionalSound != null)
+            {
+                audioSource.PlayOneShot(occasionalSound);
+            }
+        }
+        // -----------------------------
+
+        #endregion
+
         #region GRAB LOGIC
+        // ... (Grab logic is identical to your original code) ...
 
         private void ForceReleaseGrab()
         {

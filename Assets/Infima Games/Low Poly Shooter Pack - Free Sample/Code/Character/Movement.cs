@@ -11,6 +11,10 @@ namespace InfimaGames.LowPolyShooterPack
     {
         #region FIELDS SERIALIZED
 
+        [Header("Audio Setup")]
+        [Tooltip("The specific AudioSource used for footsteps. This prevents it from hijacking your voice/hit audio source!")]
+        [SerializeField] private AudioSource footstepsAudioSource;
+        
         [Header("Audio Clips")]
         
         [Tooltip("The audio clip that is played while walking.")]
