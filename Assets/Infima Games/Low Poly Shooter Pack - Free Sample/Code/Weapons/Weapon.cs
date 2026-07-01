@@ -5,156 +5,71 @@ using UnityEngine;
 
 namespace InfimaGames.LowPolyShooterPack
 {
-    /// <summary>
-    /// Weapon. This class handles most of the things that weapons need.
-    /// </summary>
     public class Weapon : WeaponBehaviour
     {
         #region FIELDS SERIALIZED
 
         [Header("Trader Settings")]
-        [Tooltip("If true, the player can cycle to this weapon. Set this to true for starting weapon!")]
         public string weaponName = "New Weapon";
         public bool isPurchased = false;
-
-        [Tooltip("The cost of the weapon.")] 
         public int weaponPrice = 1000;
 
-        // --- NEW: SHOTGUN SETTINGS ---
         [Header("Shotgun Settings")]
-        [Tooltip("If checked, this weapon behaves like a shotgun firing multiple pellets simultaneously.")]
         [SerializeField] private bool isShotgun = false;
-        
-        [Tooltip("The total number of individual pellets spawned per trigger pull.")]
         [SerializeField] private int pelletCount = 8;
-        
-        [Tooltip("The max cone offset deviation for pellet spread trajectory.")]
         [SerializeField] private float shotgunSpread = 0.05f;
-        // -----------------------------
 
         [Header("Firing")]
-
-        [Tooltip("Is this weapon automatic? If yes, then holding down the firing button will continuously fire.")]
-        [SerializeField]
-        private bool automatic;
-
-        [Tooltip("How fast the projectiles are.")]
-        [SerializeField]
-        private float projectileImpulse = 400.0f;
-
-        [Tooltip("Amount of shots this weapon can shoot in a minute. It determines how fast the weapon shoots.")]
-        [SerializeField]
-        private int roundsPerMinutes = 200;
-
-        [Tooltip("Mask of things recognized when firing.")]
-        [SerializeField]
-        private LayerMask mask;
-
-        [Tooltip("Maximum distance at which this weapon can fire accurately. Shots beyond this distance will not use linetracing for accuracy.")]
-        [SerializeField]
-        private float maximumDistance = 500.0f;
+        [SerializeField] private bool automatic;
+        [SerializeField] private float projectileImpulse = 400.0f;
+        [SerializeField] private int roundsPerMinutes = 200;
+        [SerializeField] private LayerMask mask;
+        [SerializeField] private float maximumDistance = 500.0f;
 
         [Header("Animation")]
-
-        [Tooltip("Transform that represents the weapon's ejection port, meaning the part of the weapon that casings shoot from.")]
-        [SerializeField]
-        private Transform socketEjection;
+        [SerializeField] private Transform socketEjection;
 
         [Header("Resources")]
-
-        [Tooltip("Casing Prefab.")]
-        [SerializeField]
-        private GameObject prefabCasing;
-
-        [Tooltip("Projectile Prefab. This is the prefab spawned when the weapon shoots.")]
-        [SerializeField]
-        private GameObject prefabProjectile;
-
-        [Tooltip("The AnimatorController a player character needs to use while wielding this weapon.")]
-        [SerializeField]
-        public RuntimeAnimatorController controller;
-
-        [Tooltip("Weapon Body Texture.")]
-        [SerializeField]
-        private Sprite spriteBody;
+        [SerializeField] private GameObject prefabCasing;
+        [SerializeField] private GameObject prefabProjectile;
+        [SerializeField] public RuntimeAnimatorController controller;
+        [SerializeField] private Sprite spriteBody;
 
         [Header("Audio Clips Holster")]
-
-        [Tooltip("Holster Audio Clip.")]
-        [SerializeField]
-        private AudioClip audioClipHolster;
-
-        [Tooltip("Unholster Audio Clip.")]
-        [SerializeField]
-        private AudioClip audioClipUnholster;
+        [SerializeField] private AudioClip audioClipHolster;
+        [SerializeField] private AudioClip audioClipUnholster;
 
         [Header("Audio Clips Reloads")]
-
-        [Tooltip("Reload Audio Clip.")]
-        [SerializeField]
-        private AudioClip audioClipReload;
-
-        [Tooltip("Reload Empty Audio Clip.")]
-        [SerializeField]
-        private AudioClip audioClipReloadEmpty;
+        [SerializeField] private AudioClip audioClipReload;
+        [SerializeField] private AudioClip audioClipReloadEmpty;
 
         [Header("Audio Clips Other")]
-
-        [Tooltip("AudioClip played when this weapon is fired without any ammunition.")]
-        [SerializeField]
-        private AudioClip audioClipFireEmpty;
+        [SerializeField] private AudioClip audioClipFireEmpty;
 
         [Header("Reloading")]
-        [Tooltip("How long the reload takes (seconds).")]
-        [SerializeField]
-        private float reloadDuration = 1.5f;
-
-        [Tooltip("At what time (seconds from reload start) the ammo transfer actually happens (useful to sync with animation event).")]
-        [SerializeField]
-        private float ammoApplyTime = 0.6f;
-
-        [Tooltip("Amount of ammunition stored in reserve (not in the current magazine).")]
-        [SerializeField]
-        private int reserveAmmunition = 90;
-        [Tooltip("Amount of ammunition allowed in reserve.")]
-        [SerializeField]
-        private int reserveAmmunitionMax = 90;
-
-        [Tooltip("Automatically start reload when magazine becomes empty.")]
-        [SerializeField]
-        private bool autoReloadOnEmpty = true;
-
-        [Tooltip("Allow interrupts (e.g. weapon switch or sprint) to cancel reload.")]
-        [SerializeField]
-        private bool allowReloadInterrupt = true;
+        [SerializeField] private float reloadDuration = 1.5f;
+        [SerializeField] private float ammoApplyTime = 0.6f;
+        [SerializeField] private int reserveAmmunition = 90;
+        [SerializeField] private int reserveAmmunitionMax = 90;
+        [SerializeField] private bool autoReloadOnEmpty = true;
+        [SerializeField] private bool allowReloadInterrupt = true;
 
         #endregion
 
         #region FIELDS
-
         private Animator animator;
         private WeaponAttachmentManagerBehaviour attachmentManager;
         private int ammunitionCurrent;
-
-        #region Attachment Behaviours
-
         private MagazineBehaviour magazineBehaviour;
         private MuzzleBehaviour muzzleBehaviour;
-
-        #endregion
-
         private IGameModeService gameModeService;
         private CharacterBehaviour characterBehaviour;
         private Transform playerCamera;
-
-        // Reload state
         private bool isReloading = false;
         private Coroutine reloadCoroutine;
-
         #endregion
 
         #region UNITY
-
         protected override void Awake()
         {
             animator = GetComponent<Animator>();
@@ -164,9 +79,7 @@ namespace InfimaGames.LowPolyShooterPack
             {
                 magazineBehaviour = attachmentManager.GetEquippedMagazine();
                 muzzleBehaviour = attachmentManager.GetEquippedMuzzle();
-        
-                if (magazineBehaviour != null)
-                    ammunitionCurrent = magazineBehaviour.GetAmmunitionTotal();
+                if (magazineBehaviour != null) ammunitionCurrent = magazineBehaviour.GetAmmunitionTotal();
             }
 
             gameModeService = ServiceLocator.Current.Get<IGameModeService>();
@@ -182,7 +95,6 @@ namespace InfimaGames.LowPolyShooterPack
         {
             magazineBehaviour = attachmentManager.GetEquippedMagazine();
             muzzleBehaviour = attachmentManager.GetEquippedMuzzle();
-
             ammunitionCurrent = magazineBehaviour.GetAmmunitionTotal();
             ammoApplyTime = Mathf.Clamp(ammoApplyTime, 0f, reloadDuration);
 
@@ -192,21 +104,17 @@ namespace InfimaGames.LowPolyShooterPack
                 SetupNetworkOwner(parentCharacter, parentCharacter.GetCameraWorld().transform);
             }
         }
-
         #endregion
 
         #region MULTIPLAYER SPECIFIC SETUP
-
         public void SetupNetworkOwner(CharacterBehaviour owner, Transform ownerCamera)
         {
             characterBehaviour = owner;
             playerCamera = ownerCamera;
         }
-
         #endregion
 
         #region GETTERS
-
         public override Animator GetAnimator() => animator;
         public override Sprite GetSpriteBody() => spriteBody;
         public override AudioClip GetAudioClipHolster() => audioClipHolster;
@@ -227,11 +135,9 @@ namespace InfimaGames.LowPolyShooterPack
         public override WeaponAttachmentManagerBehaviour GetAttachmentManager() => attachmentManager;
         public int GetReserveAmmunitionMax() => reserveAmmunitionMax;
         public GameObject GetPrefabProjectile() => prefabProjectile;
-        
         #endregion
 
         #region METHODS
-
         public bool TryStartReload()
         {
             if (isReloading) return false;
@@ -239,9 +145,7 @@ namespace InfimaGames.LowPolyShooterPack
 
             if (reserveAmmunition <= 0)
             {
-                if (audioClipFireEmpty != null)
-                    AudioSource.PlayClipAtPoint(audioClipFireEmpty, transform.position);
-                return false;
+                return false; // Removed the rogue 2D audio here!
             }
 
             if (animator != null)
@@ -300,11 +204,6 @@ namespace InfimaGames.LowPolyShooterPack
         public override void Reload()
         {
             if (TryStartReload()) return;
-
-            if (ammunitionCurrent == 0 && reserveAmmunition == 0 && audioClipFireEmpty != null)
-            {
-                AudioSource.PlayClipAtPoint(audioClipFireEmpty, transform.position);
-            }
         }
 
         public override void Fire(float spreadMultiplier = 1.0f)
@@ -320,13 +219,9 @@ namespace InfimaGames.LowPolyShooterPack
 
             Transform muzzleSocket = muzzleBehaviour.GetSocket();
 
-            // Local Visuals Feedback
-            const string stateName = "Fire";
-            if (animator != null) animator.Play(stateName, 0, 0.0f);
+            if (animator != null) animator.Play("Fire", 0, 0.0f);
             
             ammunitionCurrent = Mathf.Clamp(ammunitionCurrent - 1, 0, magazineBehaviour.GetAmmunitionTotal());
-            
-            // Runs local particle systems and flashlights
             muzzleBehaviour.Effect();
 
             bool trackingInstaKill = false;
@@ -337,52 +232,41 @@ namespace InfimaGames.LowPolyShooterPack
                 if (buff != null && buff.IsActive) trackingInstaKill = true;
             }
 
-            // FIXED: Only trigger network spawn if this weapon belongs to the local window owner
             var networkCharacter = characterBehaviour as Character;
             if (networkCharacter != null && networkCharacter.isOwner)
             {
-                // --- UPDATED LOGIC: SHOTGUN CONE SPREAD HANDLING ---
                 if (isShotgun)
                 {
-                    // Establish baseline point where crosshair is pointing
                     Vector3 baselineTargetPoint = playerCamera.position + playerCamera.forward * maximumDistance;
                     if (Physics.Raycast(new Ray(playerCamera.position, playerCamera.forward), out RaycastHit hit, maximumDistance, mask))
                     {
                         baselineTargetPoint = hit.point;
                     }
 
-                    // Compute true forward alignment from barrel tip to core target point
                     Vector3 coreDirection = (baselineTargetPoint - muzzleSocket.position).normalized;
 
-                    // Loop through and spawn all individual pellets via server authority
                     for (int i = 0; i < pelletCount; i++)
                     {
-                        // Generate circular coordinates relative to camera space orientation vectors
                         float randomSpreadX = UnityEngine.Random.Range(-shotgunSpread, shotgunSpread) * spreadMultiplier;
                         float randomSpreadY = UnityEngine.Random.Range(-shotgunSpread, shotgunSpread) * spreadMultiplier;
 
-                        // Vector sum offsets applied cleanly onto baseline barrel orientation
                         Vector3 randomizedPelletDirection = (coreDirection + (playerCamera.right * randomSpreadX) + (playerCamera.up * randomSpreadY)).normalized;
                         Quaternion pelletRotation = Quaternion.LookRotation(randomizedPelletDirection);
 
-                        // Individually prompt network loop manager to dispatch physics instance
                         networkCharacter.CmdSpawnNetworkedProjectile(muzzleSocket.position, pelletRotation, projectileImpulse, trackingInstaKill);
                     }
                 }
                 else
                 {
-                    // Standard Single-Shot Trajectory Calculation
                     Quaternion rotation = Quaternion.LookRotation(playerCamera.forward * 1000.0f - muzzleSocket.position);
 
-                    if (Physics.Raycast(new Ray(playerCamera.position, playerCamera.forward),
-                        out RaycastHit hit, maximumDistance, mask))
+                    if (Physics.Raycast(new Ray(playerCamera.position, playerCamera.forward), out RaycastHit hit, maximumDistance, mask))
                     {
                         rotation = Quaternion.LookRotation(hit.point - muzzleSocket.position);
                     }
 
                     networkCharacter.CmdSpawnNetworkedProjectile(muzzleSocket.position, rotation, projectileImpulse, trackingInstaKill);
                 }
-                // -----------------------------------------------------
             }
         }
 
@@ -402,7 +286,6 @@ namespace InfimaGames.LowPolyShooterPack
             if (prefabCasing != null && socketEjection != null)
                 Instantiate(prefabCasing, socketEjection.position, socketEjection.rotation);
         }
-
         #endregion
     }
 }

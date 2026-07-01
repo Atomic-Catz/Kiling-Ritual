@@ -13,6 +13,10 @@ namespace InfimaGames.LowPolyShooterPack
     {
         #region FIELDS SERIALIZED
 
+        [Header("Audio Setup")]
+        [Tooltip("The specific AudioSource used for firing weapons. This prevents it from hijacking your voice/hit audio source!")]
+        [SerializeField] private AudioSource weaponAudioSource;
+
         [Header("Death")]
         [SerializeField] private GameObject deathScreen;
         
@@ -27,7 +31,7 @@ namespace InfimaGames.LowPolyShooterPack
         [Header("Downed Prototype Settings")]
         [SerializeField] private float downedDropHeight = 1.0f;
         [SerializeField] private float downedTiltAngle = 30f;
-        [SerializeField] private float crawlSpeedMultiplier = 0.25f; // Slows movement when downed
+        [SerializeField] private float crawlSpeedMultiplier = 0.25f; 
         
         [Header("Interaction")]
         [SerializeField] private float interactRange = 3f;
@@ -51,12 +55,10 @@ namespace InfimaGames.LowPolyShooterPack
         #endregion
 
         #region FIELDS
-
         private bool aiming;
         private bool running;
         private bool holstered;
         private float lastShotTime;
-
         private int layerOverlay;
         private int layerHolster;
         private int layerActions;
@@ -71,47 +73,35 @@ namespace InfimaGames.LowPolyShooterPack
         private bool reloading;
         private bool inspecting;
         private bool holstering;
-
         private Vector2 axisLook;
         private Vector2 axisMovement;
 
         private bool holdingButtonAim;
         private bool holdingButtonRun;
         private bool holdingButtonFire;
-
         private bool tutorialTextVisible;
         private bool cursorLocked;
 
         private Coroutine reloadSafetyCoroutine;
-
-        // Downed Visual Tracking
         private Vector3 defaultCameraLocalPos;
         private Vector3 defaultInventoryLocalPos;
         private Coroutine downedVisualCoroutine;
 
-        // Tracks if the pause menu is open!
         public bool isMenuOpen { get; private set; }
-
         #endregion
 
         #region CONSTANTS
-
         private static readonly int HashAimingAlpha = Animator.StringToHash("Aiming");
         private static readonly int HashMovement = Animator.StringToHash("Movement");
-
         #endregion
 
         #region UNITY
-
         private void HandleDeath()
         {
             enabled = false;
             if (characterKinematics != null) characterKinematics.enabled = false;
 
-            if (isOwner)
-            {
-                CmdSyncDeathVisuals();
-            }
+            if (isOwner) CmdSyncDeathVisuals();
 
             if (deathScreen != null) deathScreen.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
@@ -119,10 +109,7 @@ namespace InfimaGames.LowPolyShooterPack
         }
 
         [ServerRpc]
-        private void CmdSyncDeathVisuals()
-        {
-            ObserverSyncDeathVisuals();
-        }
+        private void CmdSyncDeathVisuals() => ObserverSyncDeathVisuals();
 
         [ObserversRpc]
         private void ObserverSyncDeathVisuals()
@@ -143,24 +130,17 @@ namespace InfimaGames.LowPolyShooterPack
             {
                 aiming = false;
                 running = false;
-                
-                // Turn off Kinematics so it stops overriding our camera tilt!
                 if (characterKinematics != null) characterKinematics.enabled = false;
             }
             else
             {
-                // Turn Kinematics back on when revived!
                 if (characterKinematics != null) characterKinematics.enabled = true;
             }
 
-            // INSTANT INVISIBILITY: Hide or show the arms and weapon
             if (isOwner && inventory != null)
             {
                 Renderer[] renderers = inventory.GetComponentsInChildren<Renderer>(true);
-                foreach (var r in renderers)
-                {
-                    r.enabled = !downed; // False when down, True when back up!
-                }
+                foreach (var r in renderers) r.enabled = !downed; 
             }
 
             if (isOwner && cameraWorld != null && inventory != null)
@@ -181,27 +161,21 @@ namespace InfimaGames.LowPolyShooterPack
             while (t < 1f)
             {
                 t += Time.deltaTime * 4f; 
-                
-                // 1. Drop and Tilt the Camera (This gives the player the visual effect of falling)
                 cameraWorld.transform.localPosition = Vector3.Lerp(cameraWorld.transform.localPosition, targetCamPos, t);
                 Vector3 camEuler = cameraWorld.transform.localEulerAngles;
                 camEuler.z = Mathf.LerpAngle(camEuler.z, targetRoll, t);
                 cameraWorld.transform.localEulerAngles = camEuler;
 
-                // 2. Drop the Inventory (for audio/muzzle flashes) BUT DO NOT ROTATE IT
                 inventory.transform.localPosition = Vector3.Lerp(inventory.transform.localPosition, targetInvPos, t);
-
                 yield return null;
             }
 
-            // SAFETY SNAP: Guarantee perfect alignment when standing back up
             if (!isDowned)
             {
                 cameraWorld.transform.localPosition = defaultCameraLocalPos;
                 Vector3 finalCamEuler = cameraWorld.transform.localEulerAngles;
                 finalCamEuler.z = 0f;
                 cameraWorld.transform.localEulerAngles = finalCamEuler;
-
                 inventory.transform.localPosition = defaultInventoryLocalPos;
             }
         }
@@ -273,8 +247,7 @@ namespace InfimaGames.LowPolyShooterPack
             {
                 if (CanPlayAnimationFire() && equippedWeapon.HasAmmunition() && equippedWeapon.IsAutomatic())
                 {
-                    if (Time.time - lastShotTime > 60.0f / equippedWeapon.GetRateOfFire())
-                        Fire();
+                    if (Time.time - lastShotTime > 60.0f / equippedWeapon.GetRateOfFire()) Fire();
                 }
             }
 
@@ -288,15 +261,13 @@ namespace InfimaGames.LowPolyShooterPack
             if (equippedWeapon == null || equippedWeaponScope == null) return;
             if (characterKinematics != null) characterKinematics.Compute();
         }
-
         #endregion
 
         #region GETTERS
-
         public IInteractable GetCurrentInteractable() => currentInteractable;
         public override Camera GetCameraWorld() => cameraWorld;
         public override InventoryBehaviour GetInventory() => inventory;
-        public override bool IsCrosshairVisible() => !aiming && !holstered && !isMenuOpen; // Hide crosshair in menu
+        public override bool IsCrosshairVisible() => !aiming && !holstered && !isMenuOpen; 
         public override bool IsRunning() => running;
         public override bool IsAiming() => aiming;
         public override bool IsCursorLocked() => cursorLocked;
@@ -304,30 +275,21 @@ namespace InfimaGames.LowPolyShooterPack
         
         public override Vector2 GetInputMovement() 
         {
-            // Block all movement if the menu is open
             if (isMenuOpen) return Vector2.zero;
-
-            if (characterHealth != null && characterHealth.isDowned.value) 
-            {
-                return axisMovement * crawlSpeedMultiplier; 
-            }
+            if (characterHealth != null && characterHealth.isDowned.value) return axisMovement * crawlSpeedMultiplier; 
             return axisMovement;
         }
         
         public override Vector2 GetInputLook() => axisLook;
-
         #endregion
 
         #region METHODS
-
-        // THE MISSING METHOD IS BACK: Called by PauseMenu.cs to unlock the cursor
         public void SetMenuOpen(bool open)
         {
             isMenuOpen = open;
             cursorLocked = !open;
             UpdateCursorState();
             
-            // Immediately stop aiming and firing if we open the menu
             if (open)
             {
                 aiming = false;
@@ -363,6 +325,15 @@ namespace InfimaGames.LowPolyShooterPack
         {
             lastShotTime = Time.time;
             
+            // --- RESTORED: AUDIO FIX (LOCAL) ---
+            if (weaponAudioSource != null && equippedWeapon != null)
+            {
+                weaponAudioSource.spatialBlend = 0f; 
+                AudioClip fireSound = equippedWeapon.GetAudioClipFire();
+                if (fireSound != null) weaponAudioSource.PlayOneShot(fireSound);
+            }
+            // -----------------------------------
+
             if(equippedWeapon != null) equippedWeapon.Fire();
             characterAnimator.CrossFade("Fire", 0.05f, layerOverlay, 0);
             
@@ -374,6 +345,19 @@ namespace InfimaGames.LowPolyShooterPack
             string stateName = equippedWeapon.HasAmmunition() ? "Reload" : "Reload Empty";
             characterAnimator.Play(stateName, layerActions, 0.0f);
             reloading = true;
+
+            // --- RESTORED: AUDIO FIX (HANDLES BOTH LOCAL AND MULTIPLAYER) ---
+            if (weaponAudioSource != null && equippedWeapon != null)
+            {
+                weaponAudioSource.spatialBlend = isOwner ? 0f : 1f;
+                weaponAudioSource.spread = 0f;
+                weaponAudioSource.rolloffMode = AudioRolloffMode.Linear;
+                weaponAudioSource.maxDistance = 100f;
+                
+                AudioClip reloadClip = equippedWeapon.HasAmmunition() ? equippedWeapon.GetAudioClipReload() : equippedWeapon.GetAudioClipReloadEmpty();
+                if (reloadClip != null) weaponAudioSource.PlayOneShot(reloadClip);
+            }
+            // ----------------------------------------------------------------
 
             if (isOwner) equippedWeapon.Reload();
 
@@ -405,10 +389,7 @@ namespace InfimaGames.LowPolyShooterPack
             inventory.Equip(index);
             RefreshWeaponSetup();
 
-            if (isOwner)
-            {
-                CmdSyncWeaponSwap(index);
-            }
+            if (isOwner) CmdSyncWeaponSwap(index);
         }
 
         private void RefreshWeaponSetup()
@@ -429,6 +410,16 @@ namespace InfimaGames.LowPolyShooterPack
         private void FireEmpty()
         {
             lastShotTime = Time.time;
+            
+            // --- RESTORED: EMPTY SOUND AUDIO FIX (LOCAL) ---
+            if (weaponAudioSource != null && equippedWeapon != null)
+            {
+                weaponAudioSource.spatialBlend = 0f; 
+                AudioClip emptyClip = equippedWeapon.GetAudioClipFireEmpty();
+                if (emptyClip != null) weaponAudioSource.PlayOneShot(emptyClip);
+            }
+            // -----------------------------------------------
+
             characterAnimator.CrossFade("Fire Empty", 0.05f, layerOverlay, 0);
             RequestFireEmptyServer();
         }
@@ -444,14 +435,10 @@ namespace InfimaGames.LowPolyShooterPack
             holstered = value;
             characterAnimator.SetBool("Holstered", holstered);
         }
-
         #endregion
 
         #region ACTION CHECKS
-
         private bool IsPlayerDowned() => characterHealth != null && characterHealth.isDowned.value;
-
-        // FIXED: Added !isMenuOpen to all actions so you can't shoot/reload while clicking UI buttons!
         private bool CanPlayAnimationFire() => !(holstered || holstering || reloading || inspecting) && !IsPlayerDowned() && !isMenuOpen;
         private bool CanPlayAnimationReload() => !(reloading || inspecting) && !IsPlayerDowned() && !isMenuOpen; 
         private bool CanPlayAnimationHolster() => !(reloading || inspecting) && !IsPlayerDowned() && !isMenuOpen;
@@ -465,11 +452,9 @@ namespace InfimaGames.LowPolyShooterPack
             if (axisMovement.y <= 0 || Math.Abs(Mathf.Abs(axisMovement.x) - 1) < 0.01f) return false;
             return true;
         }
-
         #endregion
 
         #region INPUT
-
         public void OnTryInteract(InputAction.CallbackContext context)
         {
             if (!isOwner || !cursorLocked || context.phase != InputActionPhase.Performed || IsPlayerDowned() || isMenuOpen) return;
@@ -477,15 +462,16 @@ namespace InfimaGames.LowPolyShooterPack
         }
         
         public void OnTryHeal(InputAction.CallbackContext context)
-        {
-            if (!isOwner || !cursorLocked || characterHealth == null || context.phase != InputActionPhase.Started || IsPlayerDowned() || isMenuOpen) return;
-            if (reloading || inspecting || holstering || characterHealth.GetCurrentHealth() >= characterHealth.GetMaxHealth()) return;
-            if (Time.time - lastHealTime < healCooldown) return;
+		{
+    		if (!isOwner || !cursorLocked || characterHealth == null || context.phase != InputActionPhase.Started || IsPlayerDowned() || isMenuOpen) return;
+    		if (reloading || inspecting || holstering || characterHealth.GetCurrentHealth() >= characterHealth.GetMaxHealth()) return;
+           
+   			 if (Time.time - lastHealTime < healCooldown) return;
 
-            if (healCoroutine != null) StopCoroutine(healCoroutine);
-            RequestHealServer(healAmount, healDuration);
-            lastHealTime = Time.time;
-        }
+   			 if (healCoroutine != null) StopCoroutine(healCoroutine);
+   			 RequestHealServer(healAmount, healDuration);
+   			 lastHealTime = Time.time;
+		}
 
         private IEnumerator GradualHeal(float totalAmount, float duration)
         {
@@ -531,24 +517,24 @@ namespace InfimaGames.LowPolyShooterPack
             if (!isOwner || !cursorLocked || !CanPlayAnimationReload() || context.phase != InputActionPhase.Performed) return;
 
             bool hasAmmo = equippedWeapon.GetAmmunitionCurrent() > 0 || (equippedWeapon is Weapon w && w.GetReserveAmmunition() > 0);
-            if (hasAmmo) RequestReloadServer();
-            else if (equippedWeapon is Weapon w2 && w2.GetAudioClipFireEmpty() != null)
-                AudioSource.PlayClipAtPoint(w2.GetAudioClipFireEmpty(), transform.position);
+            if (hasAmmo) 
+            {
+                RequestReloadServer();
+            }
+            else 
+            {
+                FireEmpty(); 
+            }
         }
 
         // --- PURRNET RPC CHANNELS ---
-
         [ServerRpc]
-        private void CmdSyncWeaponSwap(int index)
-        {
-            ObserverSyncWeaponSwap(index);
-        }
+        private void CmdSyncWeaponSwap(int index) => ObserverSyncWeaponSwap(index);
 
         [ObserversRpc]
         private void ObserverSyncWeaponSwap(int index)
         {
             if (isOwner) return; 
-
             inventory.Equip(index);
             RefreshWeaponSetup();
         }
@@ -571,22 +557,17 @@ namespace InfimaGames.LowPolyShooterPack
             }
 
             bool globalInstaKill = GlobalBuffManager.Instance != null && GlobalBuffManager.Instance.isInstaKillActive;
-            
             GameObject projectileObj = Instantiate(activeWeapon.GetPrefabProjectile(), spawnPosition, rotation);
             Projectile projectileScript = projectileObj.GetComponent<Projectile>();
             
             if (projectileScript != null)
             {
                 int currentAttackerId = owner.HasValue ? (int)(ulong)owner.Value.id : 0;
-                
                 projectileScript.InitializeProjectile(GetComponent<Collider>(), currentAttackerId, globalInstaKill);
             }
 
             Rigidbody rb = projectileObj.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.linearVelocity = projectileObj.transform.forward * impulse;
-            }
+            if (rb != null) rb.linearVelocity = projectileObj.transform.forward * impulse;
         }
 
         [ServerRpc]
@@ -613,6 +594,17 @@ namespace InfimaGames.LowPolyShooterPack
                     if (muzzle != null) 
                     {
                         muzzle.Effect(); 
+
+                        // --- RESTORED: AUDIO FIX (MULTIPLAYER) ---
+                        AudioClip fireSound = muzzle.GetAudioClipFire();
+                        if (weaponAudioSource != null && fireSound != null)
+                        {
+                            weaponAudioSource.spatialBlend = 1f; 
+                            weaponAudioSource.spread = 0f;
+                            weaponAudioSource.rolloffMode = AudioRolloffMode.Linear;
+                            weaponAudioSource.maxDistance = 100f; 
+                            weaponAudioSource.PlayOneShot(fireSound);
+                        }
                     }
                 }
                 
@@ -631,6 +623,19 @@ namespace InfimaGames.LowPolyShooterPack
         private void ObserverPlayFireEmptyEffects()
         {
             if (isOwner) return;
+
+            // --- RESTORED: EMPTY SOUND AUDIO FIX (MULTIPLAYER) ---
+            if (weaponAudioSource != null && equippedWeapon != null)
+            {
+                weaponAudioSource.spatialBlend = 1f; 
+                weaponAudioSource.spread = 0f;
+                weaponAudioSource.rolloffMode = AudioRolloffMode.Linear;
+                weaponAudioSource.maxDistance = 100f;
+                
+                AudioClip emptyClip = equippedWeapon.GetAudioClipFireEmpty();
+                if (emptyClip != null) weaponAudioSource.PlayOneShot(emptyClip);
+            }
+
             if (characterAnimator != null) characterAnimator.CrossFade("Fire Empty", 0.05f, layerOverlay, 0);
         }
         
@@ -687,7 +692,6 @@ namespace InfimaGames.LowPolyShooterPack
 
         public void OnLockCursor(InputAction.CallbackContext context)
         {
-            // Ignore cursor lock toggles if the menu is actively open
             if (!isOwner || context.phase != InputActionPhase.Performed || isMenuOpen) return;
             cursorLocked = !cursorLocked;
             UpdateCursorState();
@@ -715,18 +719,15 @@ namespace InfimaGames.LowPolyShooterPack
                 _ => tutorialTextVisible
             };
         }
-
         #endregion
 
         #region ANIMATION EVENTS
-
         public override void EjectCasing() { if(equippedWeapon != null) equippedWeapon.EjectCasing(); }
         public override void FillAmmunition(int amount) { if(equippedWeapon != null) equippedWeapon.FillAmmunition(amount); }
         public override void SetActiveMagazine(int active) { equippedWeaponMagazine.gameObject.SetActive(active != 0); }
         public override void AnimationEndedReload() { reloading = false; if (reloadSafetyCoroutine != null) StopCoroutine(reloadSafetyCoroutine); }
         public override void AnimationEndedInspect() { inspecting = false; }
         public override void AnimationEndedHolster() { holstering = false; }
-
         #endregion
     }
 }

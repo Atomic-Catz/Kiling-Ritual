@@ -14,6 +14,21 @@ namespace InfimaGames.LowPolyShooterPack
         public Transform player; // This acts as our current runtime target
         public Animator animator;
 
+        // --- UPDATED: AUDIO SETTINGS ---
+        [Header("Audio")]
+        public AudioSource audioSource;
+        [Tooltip("The single sound that plays randomly while the commander is alive.")]
+        public AudioClip occasionalSound;
+        
+        [Tooltip("The sound that plays when launching a projectile.")]
+        public AudioClip attackSound;
+        
+        [Tooltip("How often (in seconds) the commander should randomly play the occasional sound.")]
+        public float minSoundDelay = 4f;
+        public float maxSoundDelay = 10f;
+        private float nextSoundTime = 0f;
+        // -------------------------------
+
         [Header("Buff (aura)")]
         public float buffRadius = 10f;
         [Range(1f, 4f)]
@@ -75,6 +90,9 @@ namespace InfimaGames.LowPolyShooterPack
             // By the time Start() runs, the server authority is securely established.
             if (isServer)
             {
+                // Set the first random sound timer
+                nextSoundTime = Time.time + Random.Range(minSoundDelay, maxSoundDelay);
+                
                 buffCoroutine = StartCoroutine(BuffUpdateRoutine());
                 aiCoroutine = StartCoroutine(AIUpdateRoutine());
             }
@@ -146,6 +164,13 @@ namespace InfimaGames.LowPolyShooterPack
         private void TickAI()
         {
             if (agent == null || !agent.isActiveAndEnabled || !agent.isOnNavMesh) return;
+
+            if (Time.time >= nextSoundTime)
+            {
+                SyncOccasionalSoundRpc();
+                nextSoundTime = Time.time + Random.Range(minSoundDelay, maxSoundDelay);
+            }
+
             if (player == null) return;
 
             float dist = Vector3.Distance(transform.position, player.position);
@@ -231,6 +256,13 @@ namespace InfimaGames.LowPolyShooterPack
         {
             // 1. Play the animation on all screens
             if (animator != null) animator.SetTrigger("IsAttacking");
+
+            // --- NEW: Play Attack Sound ---
+            if (audioSource != null && attackSound != null)
+            {
+                audioSource.PlayOneShot(attackSound);
+            }
+            // ------------------------------
 
             // 2. Spawn a local copy of the projectile for EVERY player
             if (projectilePrefab != null)
@@ -329,6 +361,15 @@ namespace InfimaGames.LowPolyShooterPack
             if (ragdoll != null) ragdoll.SetRagdoll(true);
 
             gameObject.layer = LayerMask.NameToLayer("DeadEnemy");
+        }
+
+        [ObserversRpc]
+        private void SyncOccasionalSoundRpc()
+        {
+            if (audioSource != null && occasionalSound != null)
+            {
+                audioSource.PlayOneShot(occasionalSound);
+            }
         }
 
         private void OnDrawGizmosSelected()

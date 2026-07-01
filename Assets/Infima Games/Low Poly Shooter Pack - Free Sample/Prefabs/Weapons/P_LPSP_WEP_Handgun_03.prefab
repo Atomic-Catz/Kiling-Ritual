@@ -1139,7 +1139,7 @@ PrefabInstance:
         type: 3}
       propertyPath: audioClipFire
       value: 
-      objectReference: {fileID: 8300000, guid: 9e9480b4d07646942b555fd43f2a0f71, type: 3}
+      objectReference: {fileID: 8300000, guid: 3b3de08407d487942bd662aaf0d4cf4c, type: 3}
     - target: {fileID: 1157167080681653570, guid: 613eeb9dc59c9934392391ae63fffa9d,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
