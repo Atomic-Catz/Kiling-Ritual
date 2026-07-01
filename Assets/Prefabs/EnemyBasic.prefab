@@ -8584,7 +8584,7 @@ MonoBehaviour:
   pointsOnDeath: 25
   attackRange: 1
   sightRange: 200
-  attackCooldown: 1.5
+  attackCooldown: 0.5
   walkSpeed: 2
   chaseSpeed: 2.5
   walkPointRange: 10

@@ -1431,7 +1431,7 @@ GameObject:
   - component: {fileID: 8232777002187441359}
   - component: {fileID: 8037987288951827974}
   - component: {fileID: 6682145884326507043}
-  m_Layer: 20
+  m_Layer: 9
   m_Name: Camera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
@@ -1703,7 +1703,7 @@ GameObject:
   - component: {fileID: 4511269730146688432}
   - component: {fileID: 3602300113485850945}
   - component: {fileID: 7579385626622219161}
-  m_Layer: 20
+  m_Layer: 9
   m_Name: Camera Depth
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2731,12 +2731,12 @@ AudioSource:
   Spatialize: 0
   SpatializePostEffects: 0
   Priority: 128
-  DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
+  DopplerLevel: 0
+  MinDistance: 2
+  MaxDistance: 15
   Pan2D: 0
   rolloffMode: 0
-  BypassEffects: 0
+  BypassEffects: 1
   BypassListenerEffects: 0
   BypassReverbZones: 0
   rolloffCustomCurve:
@@ -2783,7 +2783,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 0.5
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -3161,11 +3161,11 @@ MonoBehaviour:
   bleedOutTimerText: {fileID: 0}
   voiceSource: {fileID: 2172088024448559387}
   damageGrunts:
-  - {fileID: 8300000, guid: a74ecad4f9164504e9cd593d8a76a70a, type: 3}
-  - {fileID: 8300000, guid: a03c5cfa733f0944796011abbb9a3ecc, type: 3}
-  - {fileID: 8300000, guid: 4d3daeee7cae2294c8ed5db1a7b5174f, type: 3}
-  - {fileID: 8300000, guid: 73469d4f44f54cd4bb8c4a2c53fd5cdc, type: 3}
-  - {fileID: 8300000, guid: ccc1885516f838246abc49f26de4a080, type: 3}
+  - {fileID: 8300000, guid: 98b7428929a5e9e47b52dd8f4ba2e547, type: 3}
+  - {fileID: 8300000, guid: 2d5ed166319e64a4f96e0c73558f73ba, type: 3}
+  - {fileID: 8300000, guid: e98b4e3159c32dd4790d31e09d557fc1, type: 3}
+  - {fileID: 8300000, guid: 671b3cd885fbe6646bfe63156ddf1490, type: 3}
+  - {fileID: 8300000, guid: db1b86773d4d9384d87782909f9f2687, type: 3}
   easterEggDamageGrunt: {fileID: 8300000, guid: c8970175ccc713d4499601153a135b24,
     type: 3}
   easterEggChance: 5
@@ -3989,6 +3989,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1285528001053216295}
     m_Modifications:
+    - target: {fileID: 234849267704541432, guid: 9482e0a2ae6a92742bbe72e00f29f763,
+        type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
     - target: {fileID: 334316701149092840, guid: 9482e0a2ae6a92742bbe72e00f29f763,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -4045,6 +4050,11 @@ PrefabInstance:
       value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 2167279619440299532, guid: 9482e0a2ae6a92742bbe72e00f29f763,
+        type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 2248875195093972290, guid: 9482e0a2ae6a92742bbe72e00f29f763,
         type: 3}
       propertyPath: m_Layer
       value: 9
@@ -4254,6 +4264,11 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 9
       objectReference: {fileID: 0}
+    - target: {fileID: 4007990379107511436, guid: 9482e0a2ae6a92742bbe72e00f29f763,
+        type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
     - target: {fileID: 4146448179584115170, guid: 9482e0a2ae6a92742bbe72e00f29f763,
         type: 3}
       propertyPath: m_Layer
@@ -4279,7 +4294,17 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 9
       objectReference: {fileID: 0}
+    - target: {fileID: 7836918726336219312, guid: 9482e0a2ae6a92742bbe72e00f29f763,
+        type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
     - target: {fileID: 7842268110771946124, guid: 9482e0a2ae6a92742bbe72e00f29f763,
+        type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8017193135444929946, guid: 9482e0a2ae6a92742bbe72e00f29f763,
         type: 3}
       propertyPath: m_Layer
       value: 9
